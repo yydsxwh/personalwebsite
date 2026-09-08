@@ -13,7 +13,7 @@ export default async function PersonBlogPage() {
   return (
     <PersonSiteChrome profile={profile} showAdmin={Boolean(session && isAdmin(session))}>
       <PersonSiteSectionPage
-        title="博客 / 技术随笔"
+        title={profile.sectionLabels.kinds.BLOG}
         intro="把做过的事和方法写清楚，方便以后自己也回来看。"
         entries={entries}
       />

@@ -7,7 +7,7 @@ Andyyyds 个人 IP 展示站。源码从 [yydsxwh/Andyyyds](https://github.com/y
 - 个人介绍首页（档案、精选、项目、博客、作品、荣誉、生活）
 - 项目 / 博客 / 作品 / 简历 / 视频介绍 / 相册详情
 - 自媒体同步：B 站、抖音、小红书、视频号投稿与合集
-- 独立后台 `/person-admin`：档案、栏目条目、附件上传
+- 独立后台 `/person-admin`：档案、栏目名称、栏目条目、附件上传
 - 投稿同步后台 `/studio/person-social`
 
 ## 技术栈

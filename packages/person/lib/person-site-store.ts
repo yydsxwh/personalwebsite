@@ -84,6 +84,7 @@ export async function getPersonProfile(): Promise<PersonProfilePayload> {
   const profile = normalizePersonProfile({
     ...row,
     extraContacts: row.extraContacts,
+    sectionLabels: row.sectionLabelsJson,
   });
   if (!profile.displayName && !profile.about) {
     const fallback = await fallbackProfileFromPortal();
@@ -101,16 +102,19 @@ export async function savePersonProfile(
   input: unknown,
 ): Promise<PersonProfilePayload> {
   const profile = normalizePersonProfile(input);
+  const { extraContacts, sectionLabels, ...scalars } = profile;
   await prisma.personProfile.upsert({
     where: { id: PERSON_PROFILE_ID },
     create: {
       id: PERSON_PROFILE_ID,
-      ...profile,
-      extraContacts: JSON.stringify(profile.extraContacts),
+      ...scalars,
+      extraContacts: JSON.stringify(extraContacts),
+      sectionLabelsJson: JSON.stringify(sectionLabels),
     },
     update: {
-      ...profile,
-      extraContacts: JSON.stringify(profile.extraContacts),
+      ...scalars,
+      extraContacts: JSON.stringify(extraContacts),
+      sectionLabelsJson: JSON.stringify(sectionLabels),
     },
   });
   return profile;

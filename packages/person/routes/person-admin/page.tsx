@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PERSON_ENTRY_KIND_LABEL, PERSON_ENTRY_KINDS } from "@andyyyds/person/lib/person-site";
+import { PERSON_ENTRY_KINDS, personKindLabel } from "@andyyyds/person/lib/person-site";
 import { getPersonProfile, listPersonEntries } from "@andyyyds/person/lib/person-site-store";
 
 export default async function PersonAdminHomePage() {
@@ -10,9 +10,14 @@ export default async function PersonAdminHomePage() {
         <p className="text-xs text-[var(--muted)]">当前对外名称</p>
         <p className="mt-1 text-xl font-semibold">{profile.displayName || "还没写姓名"}</p>
         <p className="mt-2 text-sm text-[var(--muted)]">{profile.headline || "还没写一句话介绍"}</p>
-        <Link href="/person-admin/profile" className="btn btn-primary mt-4 inline-flex min-h-11 px-4 text-sm">
-          编辑档案
-        </Link>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href="/person-admin/profile" className="btn btn-primary inline-flex min-h-11 px-4 text-sm">
+            编辑档案
+          </Link>
+          <Link href="/person-admin/sections" className="btn btn-secondary inline-flex min-h-11 px-4 text-sm">
+            编辑栏目名称
+          </Link>
+        </div>
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {PERSON_ENTRY_KINDS.map((kind) => {
@@ -23,7 +28,7 @@ export default async function PersonAdminHomePage() {
               href={`/person-admin/entries/${kind.toLowerCase()}`}
               className="min-h-11 rounded-2xl border border-[var(--line)] p-4"
             >
-              <p className="font-medium">{PERSON_ENTRY_KIND_LABEL[kind]}</p>
+              <p className="font-medium">{personKindLabel(profile.sectionLabels, kind)}</p>
               <p className="mt-1 text-sm text-[var(--muted)]">{count} 条</p>
             </Link>
           );

@@ -15,10 +15,11 @@ export default async function PersonLifePage() {
   return (
     <PersonSiteChrome profile={profile} showAdmin={Boolean(session && isAdmin(session))}>
       <PersonSiteSectionPage
-        title="社会实践、课外活动与兴趣"
+        title={profile.sectionLabels.home.lifeGroup}
         intro="课堂之外做过的事，以及长期感兴趣的方向。"
         entries={[...practices, ...activities, ...interests]}
         kinds={["PRACTICE", "ACTIVITY", "INTEREST"]}
+        labels={profile.sectionLabels}
       />
     </PersonSiteChrome>
   );

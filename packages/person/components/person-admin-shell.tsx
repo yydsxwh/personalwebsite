@@ -4,24 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
-  PERSON_ENTRY_KIND_LABEL,
-  PERSON_ENTRY_KINDS,
+  DEFAULT_SECTION_LABELS,
+  personAdminNavLinks,
+  type PersonSectionLabels,
 } from "@andyyyds/person/lib/person-site";
 import "./person-site.css";
 
-const LINKS = [
-  { href: "/person-admin", label: "总览", exact: true },
-  { href: "/person-admin/profile", label: "档案与联系方式" },
-  ...PERSON_ENTRY_KINDS.map((kind) => ({
-    href: `/person-admin/entries/${kind.toLowerCase()}`,
-    label: PERSON_ENTRY_KIND_LABEL[kind],
-  })),
-  { href: "/person-admin/social", label: "自媒体同步" },
-];
-
-export function PersonAdminShell({ children }: { children: React.ReactNode }) {
+export function PersonAdminShell({
+  children,
+  labels = DEFAULT_SECTION_LABELS,
+}: {
+  children: React.ReactNode;
+  labels?: PersonSectionLabels;
+}) {
   const pathname = usePathname() || "/person-admin";
   const [open, setOpen] = useState(false);
+  const links = personAdminNavLinks(labels);
 
   return (
     <div className="person-admin container py-6 sm:py-10">
@@ -56,7 +54,7 @@ export function PersonAdminShell({ children }: { children: React.ReactNode }) {
           className={`person-admin-nav${open ? " is-open" : ""}`}
           aria-label="个人展示后台导航"
         >
-          {LINKS.map((link) => {
+          {links.map((link) => {
             const current = link.exact
               ? pathname === link.href
               : pathname === link.href || pathname.startsWith(`${link.href}/`);

@@ -13,7 +13,7 @@ export default async function PersonProjectsPage() {
   return (
     <PersonSiteChrome profile={profile} showAdmin={Boolean(session && isAdmin(session))}>
       <PersonSiteSectionPage
-        title="项目经历"
+        title={profile.sectionLabels.kinds.PROJECT}
         intro="做过的产品、课题与交付，按时间与职责整理。"
         entries={entries}
       />

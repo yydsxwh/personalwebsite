@@ -14,7 +14,7 @@ export default async function PersonIntroPage() {
   return (
     <PersonSiteChrome profile={profile} showAdmin={Boolean(session && isAdmin(session))}>
       <PersonSiteSectionPage
-        title="视频自我介绍"
+        title={profile.sectionLabels.kinds.INTRO_VIDEO}
         intro="可以直接播放。也可以附上字幕、讲稿或其他文件。"
         entries={entries}
       />

@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 import {
+  DEFAULT_SECTION_LABELS,
   buildPersonContactChips,
   normalizeExtraContacts,
   normalizePersonEntry,
   normalizePersonProfile,
+  normalizeSectionLabels,
+  personAdminNavLinks,
   personEntryHref,
   personEntrySectionHref,
+  personKindLabel,
+  personPublicNavLinks,
 } from "./person-site";
 import { classifyPersonFile, normalizePersonFiles } from "./person-files";
 
@@ -64,6 +69,41 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   ]);
   assert.equal(files.length, 1);
   assert.equal(files[0]?.kind, "pdf");
+}
+
+{
+  const labels = normalizeSectionLabels({
+    kinds: { RESUME: " 履历表 ", PROJECT: "" },
+    admin: { overview: "Dashboard" },
+    nav: { about: "About me" },
+    home: { featured: "Highlights" },
+    junk: true,
+  });
+  assert.equal(labels.kinds.RESUME, "履历表");
+  assert.equal(labels.kinds.PROJECT, DEFAULT_SECTION_LABELS.kinds.PROJECT);
+  assert.equal(labels.admin.overview, "Dashboard");
+  assert.equal(labels.admin.profile, DEFAULT_SECTION_LABELS.admin.profile);
+  assert.equal(labels.nav.about, "About me");
+  assert.equal(labels.home.featured, "Highlights");
+  assert.equal(personKindLabel(labels, "RESUME"), "履历表");
+  assert.ok(personAdminNavLinks(labels).some((link) => link.label === "履历表"));
+  assert.ok(personPublicNavLinks(labels).some((link) => link.label === "About me"));
+}
+
+{
+  const fromJson = normalizeSectionLabels(JSON.stringify({ kinds: { BLOG: "随笔" } }));
+  assert.equal(fromJson.kinds.BLOG, "随笔");
+  assert.equal(normalizeSectionLabels("").kinds.RESUME, DEFAULT_SECTION_LABELS.kinds.RESUME);
+  assert.equal(normalizeSectionLabels("not-json").nav.projects, DEFAULT_SECTION_LABELS.nav.projects);
+}
+
+{
+  const profile = normalizePersonProfile({
+    displayName: "李四",
+    sectionLabels: { kinds: { PHOTO: "相册" } },
+  });
+  assert.equal(profile.sectionLabels.kinds.PHOTO, "相册");
+  assert.equal(profile.sectionLabels.kinds.RESUME, DEFAULT_SECTION_LABELS.kinds.RESUME);
 }
 
 console.log("person-site tests ok");

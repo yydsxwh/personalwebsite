@@ -859,6 +859,8 @@ model PersonProfile {
   weibo       String   @default("")
   /// [{label,value,href}] 额外联系方式，避免每加一种就改表
   extraContacts String @default("[]")
+  /// 后台栏目 / 前台导航 / 首页区块标题，JSON
+  sectionLabelsJson String @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

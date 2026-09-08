@@ -13,7 +13,7 @@ export default async function PersonPortfolioPage() {
   return (
     <PersonSiteChrome profile={profile} showAdmin={Boolean(session && isAdmin(session))}>
       <PersonSiteSectionPage
-        title="作品集"
+        title={profile.sectionLabels.kinds.PORTFOLIO}
         intro="可展示的作品、设计与成果，一张图说明一件事。"
         entries={entries}
       />

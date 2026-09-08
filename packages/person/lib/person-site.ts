@@ -39,6 +39,78 @@ export const PERSON_ENTRY_KIND_LABEL: Record<PersonEntryKind, string> = {
   PHOTO: "照片",
 };
 
+export const PERSON_LABEL_MAX = 24;
+
+export const PERSON_ADMIN_NAV_KEYS = [
+  "overview",
+  "profile",
+  "sections",
+  "social",
+] as const;
+
+export type PersonAdminNavKey = (typeof PERSON_ADMIN_NAV_KEYS)[number];
+
+export const PERSON_PUBLIC_NAV_KEYS = [
+  "about",
+  "resume",
+  "intro",
+  "projects",
+  "blog",
+  "portfolio",
+  "honors",
+  "life",
+  "photos",
+] as const;
+
+export type PersonPublicNavKey = (typeof PERSON_PUBLIC_NAV_KEYS)[number];
+
+export const PERSON_HOME_TITLE_KEYS = [
+  "aboutMe",
+  "featured",
+  "contact",
+  "social",
+  "honorsGroup",
+  "lifeGroup",
+] as const;
+
+export type PersonHomeTitleKey = (typeof PERSON_HOME_TITLE_KEYS)[number];
+
+export type PersonSectionLabels = {
+  admin: Record<PersonAdminNavKey, string>;
+  kinds: Record<PersonEntryKind, string>;
+  nav: Record<PersonPublicNavKey, string>;
+  home: Record<PersonHomeTitleKey, string>;
+};
+
+export const DEFAULT_SECTION_LABELS: PersonSectionLabels = {
+  admin: {
+    overview: "总览",
+    profile: "档案与联系方式",
+    sections: "栏目名称",
+    social: "自媒体同步",
+  },
+  kinds: { ...PERSON_ENTRY_KIND_LABEL },
+  nav: {
+    about: "关于",
+    resume: "简历",
+    intro: "视频",
+    projects: "项目",
+    blog: "博客",
+    portfolio: "作品",
+    honors: "荣誉",
+    life: "经历",
+    photos: "照片",
+  },
+  home: {
+    aboutMe: "关于我",
+    featured: "精选",
+    contact: "联系方式",
+    social: "自媒体",
+    honorsGroup: "成绩与荣誉",
+    lifeGroup: "社会实践与课外活动",
+  },
+};
+
 export const PERSON_PROFILE_ID = "default";
 export const PERSON_NAME_MAX = 40;
 export const PERSON_HEADLINE_MAX = 80;
@@ -74,6 +146,7 @@ export type PersonProfilePayload = {
   zhihu: string;
   weibo: string;
   extraContacts: PersonExtraContact[];
+  sectionLabels: PersonSectionLabels;
 };
 
 export type PersonEntryPayload = {
@@ -114,6 +187,7 @@ export const DEFAULT_PERSON_PROFILE: PersonProfilePayload = {
   zhihu: "",
   weibo: "",
   extraContacts: [],
+  sectionLabels: DEFAULT_SECTION_LABELS,
 };
 
 export function isPersonEntryKind(value: string): value is PersonEntryKind {
@@ -133,6 +207,48 @@ function clipUrl(raw: unknown): string {
   if (/^(https?:\/\/|\/uploads\/|\/|mailto:|tel:)/i.test(text)) return text;
   if (/^[\w.-]+\.[a-z]{2,}([/?#].*)?$/i.test(text)) return `https://${text}`;
   return "";
+}
+
+function clipLabel(raw: unknown, fallback: string): string {
+  return clip(raw, PERSON_LABEL_MAX) || fallback;
+}
+
+function readLabelGroup<K extends string>(
+  raw: unknown,
+  keys: readonly K[],
+  fallback: Record<K, string>,
+): Record<K, string> {
+  const input = raw && typeof raw === "object" ? (raw as Partial<Record<K, unknown>>) : {};
+  const next = { ...fallback };
+  for (const key of keys) {
+    next[key] = clipLabel(input[key], fallback[key]);
+  }
+  return next;
+}
+
+export function normalizeSectionLabels(raw: unknown): PersonSectionLabels {
+  let value = raw;
+  if (typeof raw === "string") {
+    try {
+      value = JSON.parse(raw || "{}");
+    } catch {
+      value = {};
+    }
+  }
+  const input = value && typeof value === "object" ? (value as Partial<PersonSectionLabels>) : {};
+  return {
+    admin: readLabelGroup(input.admin, PERSON_ADMIN_NAV_KEYS, DEFAULT_SECTION_LABELS.admin),
+    kinds: readLabelGroup(input.kinds, PERSON_ENTRY_KINDS, DEFAULT_SECTION_LABELS.kinds),
+    nav: readLabelGroup(input.nav, PERSON_PUBLIC_NAV_KEYS, DEFAULT_SECTION_LABELS.nav),
+    home: readLabelGroup(input.home, PERSON_HOME_TITLE_KEYS, DEFAULT_SECTION_LABELS.home),
+  };
+}
+
+export function personKindLabel(
+  labels: PersonSectionLabels | undefined,
+  kind: PersonEntryKind,
+): string {
+  return labels?.kinds[kind] || PERSON_ENTRY_KIND_LABEL[kind];
 }
 
 export function normalizeExtraContacts(raw: unknown): PersonExtraContact[] {
@@ -193,6 +309,7 @@ export function normalizePersonProfile(raw: unknown): PersonProfilePayload {
     zhihu: clipUrl(input.zhihu),
     weibo: clipUrl(input.weibo),
     extraContacts: normalizeExtraContacts(input.extraContacts),
+    sectionLabels: normalizeSectionLabels(input.sectionLabels),
   };
 }
 
@@ -348,4 +465,31 @@ export function personEntryHref(entry: Pick<PersonEntryPayload, "kind" | "id">):
   if (entry.kind === "PROJECT") return `/about/person/projects/${entry.id}`;
   if (entry.kind === "BLOG") return `/about/person/blog/${entry.id}`;
   return `/about/person/e/${entry.id}`;
+}
+
+export function personAdminNavLinks(labels: PersonSectionLabels) {
+  return [
+    { href: "/person-admin", label: labels.admin.overview, exact: true },
+    { href: "/person-admin/profile", label: labels.admin.profile },
+    { href: "/person-admin/sections", label: labels.admin.sections },
+    ...PERSON_ENTRY_KINDS.map((kind) => ({
+      href: `/person-admin/entries/${kind.toLowerCase()}`,
+      label: labels.kinds[kind],
+    })),
+    { href: "/person-admin/social", label: labels.admin.social },
+  ];
+}
+
+export function personPublicNavLinks(labels: PersonSectionLabels) {
+  return [
+    { href: "/about/person", label: labels.nav.about, match: "exact" as const },
+    { href: "/about/person/resume", label: labels.nav.resume, match: "prefix" as const },
+    { href: "/about/person/intro", label: labels.nav.intro, match: "prefix" as const },
+    { href: "/about/person/projects", label: labels.nav.projects, match: "prefix" as const },
+    { href: "/about/person/blog", label: labels.nav.blog, match: "prefix" as const },
+    { href: "/about/person/portfolio", label: labels.nav.portfolio, match: "prefix" as const },
+    { href: "/about/person/honors", label: labels.nav.honors, match: "prefix" as const },
+    { href: "/about/person/life", label: labels.nav.life, match: "prefix" as const },
+    { href: "/about/person/photos", label: labels.nav.photos, match: "prefix" as const },
+  ];
 }

@@ -14,7 +14,7 @@ export default async function PersonResumePage() {
   return (
     <PersonSiteChrome profile={profile} showAdmin={Boolean(session && isAdmin(session))}>
       <PersonSiteSectionPage
-        title="简历"
+        title={profile.sectionLabels.kinds.RESUME}
         intro="简历文档、作品附件都可以在这里预览或下载，格式不限。"
         entries={entries}
       />

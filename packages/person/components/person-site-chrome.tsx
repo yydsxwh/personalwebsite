@@ -3,20 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import type { PersonProfilePayload } from "@andyyyds/person/lib/person-site";
+import {
+  DEFAULT_SECTION_LABELS,
+  personPublicNavLinks,
+  type PersonProfilePayload,
+} from "@andyyyds/person/lib/person-site";
 import "./person-site.css";
-
-const NAV = [
-  { href: "/about/person", label: "关于", match: "exact" as const },
-  { href: "/about/person/resume", label: "简历", match: "prefix" as const },
-  { href: "/about/person/intro", label: "视频", match: "prefix" as const },
-  { href: "/about/person/projects", label: "项目", match: "prefix" as const },
-  { href: "/about/person/blog", label: "博客", match: "prefix" as const },
-  { href: "/about/person/portfolio", label: "作品", match: "prefix" as const },
-  { href: "/about/person/honors", label: "荣誉", match: "prefix" as const },
-  { href: "/about/person/life", label: "经历", match: "prefix" as const },
-  { href: "/about/person/photos", label: "照片", match: "prefix" as const },
-];
 
 function navCurrent(pathname: string, href: string, match: "exact" | "prefix") {
   if (match === "exact") return pathname === href;
@@ -33,6 +25,7 @@ export function PersonSiteChrome({ profile, children, showAdmin }: Props) {
   const pathname = usePathname() || "/about/person";
   const [open, setOpen] = useState(false);
   const name = profile.displayName || "个人展示";
+  const nav = personPublicNavLinks(profile.sectionLabels || DEFAULT_SECTION_LABELS);
 
   return (
     <div className="person-site">
@@ -54,7 +47,7 @@ export function PersonSiteChrome({ profile, children, showAdmin }: Props) {
             className={`person-nav${open ? " is-open" : ""}`}
             aria-label="个人展示导航"
           >
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { PersonAdminShell } from "@andyyyds/person/components/person-admin-shell";
+import { getPersonProfile } from "@andyyyds/person/lib/person-site-store";
 import { getSession } from "@andyyyds/shared/auth";
 import { isAdmin } from "@andyyyds/shared/roles";
 
@@ -11,5 +12,6 @@ export default async function PersonAdminLayout({
   const session = await getSession();
   if (!session) redirect("/login?next=/person-admin");
   if (!isAdmin(session)) redirect("/studio");
-  return <PersonAdminShell>{children}</PersonAdminShell>;
+  const profile = await getPersonProfile();
+  return <PersonAdminShell labels={profile.sectionLabels}>{children}</PersonAdminShell>;
 }

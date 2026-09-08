@@ -15,7 +15,9 @@ export default async function PersonPhotosPage() {
   return (
     <PersonSiteChrome profile={profile} showAdmin={Boolean(session && isAdmin(session))}>
       <p className="person-kicker !text-[var(--ps-gold)]">Gallery</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">照片</h1>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+        {profile.sectionLabels.kinds.PHOTO}
+      </h1>
       <p className="mt-3 max-w-2xl text-[var(--ps-muted)] leading-7">
         头像之外的形象照、现场与作品照片。点开可看说明。
       </p>

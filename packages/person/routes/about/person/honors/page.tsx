@@ -14,10 +14,11 @@ export default async function PersonHonorsPage() {
   return (
     <PersonSiteChrome profile={profile} showAdmin={Boolean(session && isAdmin(session))}>
       <PersonSiteSectionPage
-        title="成绩与获奖荣誉"
+        title={profile.sectionLabels.home.honorsGroup}
         intro="成绩、证书、竞赛与公开认可，按条目列出。"
         entries={[...honors, ...grades]}
         kinds={["HONOR", "GRADE"]}
+        labels={profile.sectionLabels}
       />
     </PersonSiteChrome>
   );

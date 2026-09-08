@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { PersonAdminEntriesPanel } from "@andyyyds/person/components/person-admin-entries-panel";
-import { isPersonEntryKind } from "@andyyyds/person/lib/person-site";
+import { isPersonEntryKind, personKindLabel } from "@andyyyds/person/lib/person-site";
+import { getPersonProfile } from "@andyyyds/person/lib/person-site-store";
 
 export default async function PersonAdminEntriesPage({
   params,
@@ -10,5 +11,11 @@ export default async function PersonAdminEntriesPage({
   const { kind } = await params;
   const normalized = kind.toUpperCase();
   if (!isPersonEntryKind(normalized)) notFound();
-  return <PersonAdminEntriesPanel kind={normalized} />;
+  const profile = await getPersonProfile();
+  return (
+    <PersonAdminEntriesPanel
+      kind={normalized}
+      label={personKindLabel(profile.sectionLabels, normalized)}
+    />
+  );
 }

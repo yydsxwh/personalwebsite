@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
-  PERSON_ENTRY_KIND_LABEL,
+  DEFAULT_SECTION_LABELS,
+  personKindLabel,
   buildPersonContactChips,
   personEntryHref,
   splitPersonAbout,
@@ -129,6 +130,7 @@ export function PersonSiteHome({
   pagination,
 }: Props) {
   const chips = buildPersonContactChips(profile);
+  const labels = profile.sectionLabels || DEFAULT_SECTION_LABELS;
   const about = splitPersonAbout(profile.about);
   const media = socialChips(socialAccounts);
   const honorList = [...honors, ...grades].slice(0, 4);
@@ -180,7 +182,7 @@ export function PersonSiteHome({
         </div>
       ) : null}
 
-      <Section title="关于我">
+      <Section title={labels.home.aboutMe}>
         {about.length ? (
           <div className="person-card person-prose p-5 sm:p-7">
             {about.map((para) => (
@@ -193,7 +195,7 @@ export function PersonSiteHome({
       </Section>
 
       {photos.length ? (
-        <Section title="照片" moreHref={photos.length > 8 ? "/about/person/photos" : undefined}>
+        <Section title={labels.kinds.PHOTO} moreHref={photos.length > 8 ? "/about/person/photos" : undefined}>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {photos.slice(0, 8).map((photo) => {
               const src = photo.coverUrl || photo.images[0];
@@ -216,7 +218,7 @@ export function PersonSiteHome({
       {introVideos.length ? (
         <Section
           id="intro"
-          title="视频自我介绍"
+          title={labels.kinds.INTRO_VIDEO}
           moreHref={introVideos.length > 1 ? "/about/person/intro" : undefined}
         >
           <div className="grid gap-5">
@@ -254,13 +256,13 @@ export function PersonSiteHome({
       ) : null}
 
       {featured.length ? (
-        <Section title="精选">
+        <Section title={labels.home.featured}>
           <div className="person-grid person-grid-2">
             {featured.slice(0, 4).map((entry) => (
               <PersonEntryCard
                 key={entry.id}
                 entry={entry}
-                showKind={PERSON_ENTRY_KIND_LABEL[entry.kind]}
+                showKind={personKindLabel(labels, entry.kind)}
               />
             ))}
           </div>
@@ -269,7 +271,7 @@ export function PersonSiteHome({
 
       <Section
         id="resume"
-        title="简历"
+        title={labels.kinds.RESUME}
         moreHref={resumes.length > 1 ? "/about/person/resume" : undefined}
       >
         {resumes.length ? (
@@ -286,7 +288,7 @@ export function PersonSiteHome({
         )}
       </Section>
 
-      <Section id="projects" title="项目经历" moreHref={projects.length > 4 ? "/about/person/projects" : undefined}>
+      <Section id="projects" title={labels.kinds.PROJECT} moreHref={projects.length > 4 ? "/about/person/projects" : undefined}>
         {projects.length ? (
           <div className="person-grid person-grid-2">
             {projects.slice(0, 4).map((entry) => (
@@ -298,7 +300,7 @@ export function PersonSiteHome({
         )}
       </Section>
 
-      <Section title="作品集" moreHref={portfolio.length > 3 ? "/about/person/portfolio" : undefined}>
+      <Section title={labels.kinds.PORTFOLIO} moreHref={portfolio.length > 3 ? "/about/person/portfolio" : undefined}>
         {portfolio.length ? (
           <div className="person-grid person-grid-3">
             {portfolio.slice(0, 6).map((entry) => (
@@ -310,14 +312,14 @@ export function PersonSiteHome({
         )}
       </Section>
 
-      <Section title="成绩与荣誉" moreHref={honorList.length ? "/about/person/honors" : undefined}>
+      <Section title={labels.home.honorsGroup} moreHref={honorList.length ? "/about/person/honors" : undefined}>
         {honorList.length ? (
           <div className="person-grid person-grid-2">
             {honorList.map((entry) => (
               <PersonEntryCard
                 key={entry.id}
                 entry={entry}
-                showKind={PERSON_ENTRY_KIND_LABEL[entry.kind]}
+                showKind={personKindLabel(labels, entry.kind)}
               />
             ))}
           </div>
@@ -326,14 +328,14 @@ export function PersonSiteHome({
         )}
       </Section>
 
-      <Section title="社会实践与课外活动" moreHref={lifeList.length ? "/about/person/life" : undefined}>
+      <Section title={labels.home.lifeGroup} moreHref={lifeList.length ? "/about/person/life" : undefined}>
         {lifeList.length ? (
           <div className="person-grid person-grid-2">
             {lifeList.map((entry) => (
               <PersonEntryCard
                 key={entry.id}
                 entry={entry}
-                showKind={PERSON_ENTRY_KIND_LABEL[entry.kind]}
+                showKind={personKindLabel(labels, entry.kind)}
               />
             ))}
           </div>
@@ -343,7 +345,7 @@ export function PersonSiteHome({
       </Section>
 
       {interests.length ? (
-        <Section title="兴趣">
+        <Section title={labels.kinds.INTEREST}>
           <div className="flex flex-wrap gap-2">
             {interests.map((item) => (
               <Link key={item.id} href={personEntryHref(item)} className="person-chip">
@@ -355,7 +357,7 @@ export function PersonSiteHome({
       ) : null}
 
       {chips.length || media.length ? (
-        <Section id="contact" title="联系方式">
+        <Section id="contact" title={labels.home.contact}>
           <div className="person-card p-5 sm:p-7">
             <p className="text-sm leading-7 text-[var(--ps-muted)]">
               邮件、电话与常见社交账号都可以直接点开。微信 / QQ 请按号码添加。
@@ -381,7 +383,7 @@ export function PersonSiteHome({
         </Section>
       ) : null}
 
-      <Section title="博客 / 技术随笔" moreHref={blogs.length > 3 ? "/about/person/blog" : undefined}>
+      <Section title={labels.kinds.BLOG} moreHref={blogs.length > 3 ? "/about/person/blog" : undefined}>
         {blogs.length ? (
           <div className="person-grid person-grid-2">
             {blogs.slice(0, 4).map((entry) => (
@@ -394,7 +396,7 @@ export function PersonSiteHome({
       </Section>
 
       {personSocialHasAccount(socialAccounts) || albums.length || posts.length ? (
-        <Section id="social" title="自媒体">
+        <Section id="social" title={labels.home.social}>
           <PersonSocialFeed albums={albums} posts={posts} pagination={pagination} />
         </Section>
       ) : null}

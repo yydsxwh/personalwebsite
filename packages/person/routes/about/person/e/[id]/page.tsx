@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { PersonSiteArticle } from "@andyyyds/person/components/person-site-article";
 import { PersonSiteChrome } from "@andyyyds/person/components/person-site-chrome";
-import { PERSON_ENTRY_KIND_LABEL, personEntrySectionHref } from "@andyyyds/person/lib/person-site";
+import { personEntrySectionHref, personKindLabel } from "@andyyyds/person/lib/person-site";
 import { getPersonEntry, getPersonProfile } from "@andyyyds/person/lib/person-site-store";
 import { getSession } from "@andyyyds/shared/auth";
 import { isAdmin } from "@andyyyds/shared/roles";
@@ -28,7 +28,7 @@ export default async function PersonEntryDetailPage({ params }: Props) {
       <PersonSiteArticle
         entry={entry}
         backHref={personEntrySectionHref(entry.kind)}
-        backLabel={PERSON_ENTRY_KIND_LABEL[entry.kind]}
+        backLabel={personKindLabel(profile.sectionLabels, entry.kind)}
       />
     </PersonSiteChrome>
   );

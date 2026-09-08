@@ -36,7 +36,13 @@ function emptyDraft(kind: PersonEntryKind): Partial<PersonEntryPayload> {
   };
 }
 
-export function PersonAdminEntriesPanel({ kind }: { kind: PersonEntryKind }) {
+export function PersonAdminEntriesPanel({
+  kind,
+  label,
+}: {
+  kind: PersonEntryKind;
+  label?: string;
+}) {
   const [items, setItems] = useState<PersonEntryPayload[]>([]);
   const [draft, setDraft] = useState<Partial<PersonEntryPayload>>(emptyDraft(kind));
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -85,7 +91,7 @@ export function PersonAdminEntriesPanel({ kind }: { kind: PersonEntryKind }) {
   return (
     <div className="grid gap-6">
       <div>
-        <h2 className="text-lg font-semibold">{PERSON_ENTRY_KIND_LABEL[kind]}</h2>
+        <h2 className="text-lg font-semibold">{label || PERSON_ENTRY_KIND_LABEL[kind]}</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           {personEntryAdminHint(kind)} 未发布的只留在后台。
         </p>
