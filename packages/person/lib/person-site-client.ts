@@ -29,7 +29,7 @@ export async function fetchPersonAdminProfile(): Promise<PersonProfilePayload> {
 }
 
 export async function savePersonAdminProfile(
-  input: PersonProfilePayload,
+  input: Partial<PersonProfilePayload>,
 ): Promise<PersonProfilePayload> {
   const res = await fetch("/api/person-admin/profile", {
     method: "PATCH",

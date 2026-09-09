@@ -9,6 +9,7 @@ import {
   DEFAULT_PERSON_PROFILE,
   PERSON_PROFILE_ID,
   isPersonEntryKind,
+  mergeSectionLabels,
   normalizeImageList,
   normalizePersonEntry,
   normalizePersonProfile,
@@ -101,7 +102,17 @@ export async function getPersonProfile(): Promise<PersonProfilePayload> {
 export async function savePersonProfile(
   input: unknown,
 ): Promise<PersonProfilePayload> {
-  const profile = normalizePersonProfile(input);
+  const existing = await getPersonProfile();
+  const raw = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  const profile = normalizePersonProfile({
+    ...existing,
+    ...raw,
+    extraContacts: "extraContacts" in raw ? raw.extraContacts : existing.extraContacts,
+    sectionLabels:
+      "sectionLabels" in raw
+        ? mergeSectionLabels(existing.sectionLabels, raw.sectionLabels)
+        : existing.sectionLabels,
+  });
   const { extraContacts, sectionLabels, ...scalars } = profile;
   await prisma.personProfile.upsert({
     where: { id: PERSON_PROFILE_ID },

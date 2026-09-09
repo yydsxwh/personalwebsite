@@ -182,7 +182,7 @@ export function PersonSiteHome({
         </div>
       ) : null}
 
-      <Section title={labels.home.aboutMe}>
+      <Section id="about" title={labels.home.aboutMe}>
         {about.length ? (
           <div className="person-card person-prose p-5 sm:p-7">
             {about.map((para) => (
@@ -193,67 +193,6 @@ export function PersonSiteHome({
           <PersonEmpty>还没有写自我介绍。打开个人展示后台即可完善。</PersonEmpty>
         )}
       </Section>
-
-      {photos.length ? (
-        <Section title={labels.kinds.PHOTO} moreHref={photos.length > 8 ? "/about/person/photos" : undefined}>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {photos.slice(0, 8).map((photo) => {
-              const src = photo.coverUrl || photo.images[0];
-              if (!src) return null;
-              return (
-                <Link
-                  key={photo.id}
-                  href={personEntryHref(photo)}
-                  className="person-card overflow-hidden"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={photo.title} className="aspect-[4/3] w-full object-cover" />
-                </Link>
-              );
-            })}
-          </div>
-        </Section>
-      ) : null}
-
-      {introVideos.length ? (
-        <Section
-          id="intro"
-          title={labels.kinds.INTRO_VIDEO}
-          moreHref={introVideos.length > 1 ? "/about/person/intro" : undefined}
-        >
-          <div className="grid gap-5">
-            {introVideos.slice(0, 2).map((entry) => {
-              const video = firstPersonVideo(entry.files);
-              return (
-                <div key={entry.id} className="person-card overflow-hidden p-4 sm:p-5">
-                  <p className="person-meta">{entry.period || "自我介绍"}</p>
-                  <h3 className="mt-1 text-lg font-semibold">{entry.title}</h3>
-                  {entry.summary ? (
-                    <p className="mt-2 text-sm leading-6 text-[var(--ps-muted)]">{entry.summary}</p>
-                  ) : null}
-                  {video ? (
-                    <video
-                      className="person-file-media mt-4"
-                      src={personFilePreviewPath(entry.id, video.id)}
-                      controls
-                      playsInline
-                      preload="metadata"
-                    />
-                  ) : (
-                    <PersonFileGallery entryId={entry.id} files={entry.files} />
-                  )}
-                  <Link
-                    href={personEntryHref(entry)}
-                    className="mt-3 inline-flex min-h-11 items-center text-sm text-[var(--ps-gold)]"
-                  >
-                    查看这条介绍
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        </Section>
-      ) : null}
 
       {featured.length ? (
         <Section title={labels.home.featured}>
@@ -271,7 +210,7 @@ export function PersonSiteHome({
 
       <Section
         id="resume"
-        title={labels.kinds.RESUME}
+        title={labels.nav.resume}
         moreHref={resumes.length > 1 ? "/about/person/resume" : undefined}
       >
         {resumes.length ? (
@@ -288,7 +227,49 @@ export function PersonSiteHome({
         )}
       </Section>
 
-      <Section id="projects" title={labels.kinds.PROJECT} moreHref={projects.length > 4 ? "/about/person/projects" : undefined}>
+      <Section
+        id="intro"
+        title={labels.nav.intro}
+        moreHref={introVideos.length > 1 ? "/about/person/intro" : undefined}
+      >
+        {introVideos.length ? (
+          <div className="grid gap-5">
+            {introVideos.slice(0, 2).map((entry) => {
+              const video = firstPersonVideo(entry.files);
+              return (
+                <div key={entry.id} className="person-card overflow-hidden p-4 sm:p-5">
+                  <p className="person-meta">{entry.period || "自我介绍"}</p>
+                  <h3 className="mt-1 text-lg font-semibold">{entry.title}</h3>
+                  {entry.summary ? (
+                    <p className="mt-2 text-sm leading-6 text-[var(--ps-muted)]">{entry.summary}</p>
+                  ) : null}
+                  {video ? (
+                    <video
+                      className="person-file-media mt-4"
+                      src={video.url.startsWith("/uploads/") ? video.url : personFilePreviewPath(entry.id, video.id)}
+                      controls
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : (
+                    <PersonFileGallery entryId={entry.id} files={entry.files} />
+                  )}
+                  <Link
+                    href={personEntryHref(entry)}
+                    className="mt-3 inline-flex min-h-11 items-center text-sm text-[var(--ps-gold)]"
+                  >
+                    查看这条介绍
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <PersonEmpty>视频自我介绍会显示在这里，后台上传后首页就能看到。</PersonEmpty>
+        )}
+      </Section>
+
+      <Section id="projects" title={labels.nav.projects} moreHref={projects.length > 4 ? "/about/person/projects" : undefined}>
         {projects.length ? (
           <div className="person-grid person-grid-2">
             {projects.slice(0, 4).map((entry) => (
@@ -300,7 +281,19 @@ export function PersonSiteHome({
         )}
       </Section>
 
-      <Section title={labels.kinds.PORTFOLIO} moreHref={portfolio.length > 3 ? "/about/person/portfolio" : undefined}>
+      <Section id="blog" title={labels.nav.blog} moreHref={blogs.length > 3 ? "/about/person/blog" : undefined}>
+        {blogs.length ? (
+          <div className="person-grid person-grid-2">
+            {blogs.slice(0, 4).map((entry) => (
+              <PersonEntryCard key={entry.id} entry={entry} />
+            ))}
+          </div>
+        ) : (
+          <PersonEmpty>技术随笔还没开始写。</PersonEmpty>
+        )}
+      </Section>
+
+      <Section id="portfolio" title={labels.nav.portfolio} moreHref={portfolio.length > 3 ? "/about/person/portfolio" : undefined}>
         {portfolio.length ? (
           <div className="person-grid person-grid-3">
             {portfolio.slice(0, 6).map((entry) => (
@@ -312,7 +305,7 @@ export function PersonSiteHome({
         )}
       </Section>
 
-      <Section title={labels.home.honorsGroup} moreHref={honorList.length ? "/about/person/honors" : undefined}>
+      <Section id="honors" title={labels.nav.honors} moreHref={honorList.length ? "/about/person/honors" : undefined}>
         {honorList.length ? (
           <div className="person-grid person-grid-2">
             {honorList.map((entry) => (
@@ -328,33 +321,57 @@ export function PersonSiteHome({
         )}
       </Section>
 
-      <Section title={labels.home.lifeGroup} moreHref={lifeList.length ? "/about/person/life" : undefined}>
-        {lifeList.length ? (
-          <div className="person-grid person-grid-2">
-            {lifeList.map((entry) => (
-              <PersonEntryCard
-                key={entry.id}
-                entry={entry}
-                showKind={personKindLabel(labels, entry.kind)}
-              />
-            ))}
+      <Section id="life" title={labels.nav.life} moreHref={lifeList.length || interests.length ? "/about/person/life" : undefined}>
+        {lifeList.length || interests.length ? (
+          <div className="grid gap-4">
+            {lifeList.length ? (
+              <div className="person-grid person-grid-2">
+                {lifeList.map((entry) => (
+                  <PersonEntryCard
+                    key={entry.id}
+                    entry={entry}
+                    showKind={personKindLabel(labels, entry.kind)}
+                  />
+                ))}
+              </div>
+            ) : null}
+            {interests.length ? (
+              <div className="flex flex-wrap gap-2">
+                {interests.map((item) => (
+                  <Link key={item.id} href={personEntryHref(item)} className="person-chip">
+                    {item.title}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : (
           <PersonEmpty>社会实践、课外活动会列在这里。</PersonEmpty>
         )}
       </Section>
 
-      {interests.length ? (
-        <Section title={labels.kinds.INTEREST}>
-          <div className="flex flex-wrap gap-2">
-            {interests.map((item) => (
-              <Link key={item.id} href={personEntryHref(item)} className="person-chip">
-                {item.title}
-              </Link>
-            ))}
+      <Section id="photos" title={labels.nav.photos} moreHref={photos.length > 8 ? "/about/person/photos" : undefined}>
+        {photos.length ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {photos.slice(0, 8).map((photo) => {
+              const src = photo.coverUrl || photo.images[0];
+              if (!src) return null;
+              return (
+                <Link
+                  key={photo.id}
+                  href={personEntryHref(photo)}
+                  className="person-card overflow-hidden"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt={photo.title} className="aspect-[4/3] w-full object-cover" />
+                </Link>
+              );
+            })}
           </div>
-        </Section>
-      ) : null}
+        ) : (
+          <PersonEmpty>照片会显示在这里，后台添加后首页就能看到。</PersonEmpty>
+        )}
+      </Section>
 
       {chips.length || media.length ? (
         <Section id="contact" title={labels.home.contact}>

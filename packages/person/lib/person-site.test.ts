@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import {
   DEFAULT_SECTION_LABELS,
+  mergeSectionLabels,
   buildPersonContactChips,
   normalizeExtraContacts,
   normalizePersonEntry,
   normalizePersonProfile,
   normalizeSectionLabels,
+  PERSON_HOME_NAV_SECTIONS,
+  PERSON_PUBLIC_NAV_KEYS,
   personAdminNavLinks,
   personEntryHref,
   personEntrySectionHref,
@@ -69,6 +72,12 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   ]);
   assert.equal(files.length, 1);
   assert.equal(files[0]?.kind, "pdf");
+  const vod = normalizePersonFiles([
+    { name: "talk.mp4", url: "vod:abc123", mime: "video/mp4", size: 8 },
+  ]);
+  assert.equal(vod.length, 1);
+  assert.equal(vod[0]?.kind, "video");
+  assert.equal(vod[0]?.url, "vod:abc123");
 }
 
 {
@@ -88,6 +97,21 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   assert.equal(personKindLabel(labels, "RESUME"), "履历表");
   assert.ok(personAdminNavLinks(labels).some((link) => link.label === "履历表"));
   assert.ok(personPublicNavLinks(labels).some((link) => link.label === "About me"));
+  const pageHrefs = personPublicNavLinks(DEFAULT_SECTION_LABELS).map((link) => link.href);
+  const homeHrefs = personPublicNavLinks(DEFAULT_SECTION_LABELS, "home").map((link) => link.href);
+  assert.ok(pageHrefs.includes("/about/person/intro"));
+  assert.ok(homeHrefs.includes("/about/person#intro"));
+  assert.deepEqual(
+    PERSON_HOME_NAV_SECTIONS.map((section) => section.key),
+    PERSON_PUBLIC_NAV_KEYS.filter((key) => key !== "about"),
+  );
+}
+
+{
+  const merged = mergeSectionLabels(DEFAULT_SECTION_LABELS, { kinds: { RESUME: "履历" } });
+  assert.equal(merged.kinds.RESUME, "履历");
+  assert.equal(merged.kinds.PROJECT, DEFAULT_SECTION_LABELS.kinds.PROJECT);
+  assert.equal(merged.nav.intro, DEFAULT_SECTION_LABELS.nav.intro);
 }
 
 {

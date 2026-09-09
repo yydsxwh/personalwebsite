@@ -53,24 +53,38 @@ function LabelField({
   label,
   hint,
   value,
+  saving,
   onChange,
+  onSave,
 }: {
   label: string;
   hint?: string;
   value: string;
+  saving?: boolean;
   onChange: (value: string) => void;
+  onSave: () => void;
 }) {
   return (
-    <label className="block text-xs text-[var(--muted)]">
+    <div className="block text-xs text-[var(--muted)]">
       {label}
       {hint ? <span className="ml-2 text-[11px] opacity-70">{hint}</span> : null}
-      <input
-        className="field mt-1 min-h-11 w-full rounded-xl px-3 text-sm text-[var(--ink)]"
-        value={value}
-        maxLength={PERSON_LABEL_MAX}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </label>
+      <div className="mt-1 flex gap-2">
+        <input
+          className="field min-h-11 w-full rounded-xl px-3 text-sm text-[var(--ink)]"
+          value={value}
+          maxLength={PERSON_LABEL_MAX}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        <button
+          type="button"
+          className="btn btn-secondary min-h-11 shrink-0 px-3 text-sm"
+          disabled={saving}
+          onClick={onSave}
+        >
+          {saving ? "保存中" : "保存"}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -80,6 +94,7 @@ export function PersonAdminSectionLabelsForm() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [savingKey, setSavingKey] = useState("");
 
   useEffect(() => {
     void fetchPersonAdminProfile()
@@ -99,19 +114,54 @@ export function PersonAdminSectionLabelsForm() {
     setProfile((current) => ({ ...current, sectionLabels: next }));
   };
 
-  const onSave = async () => {
+  const persistLabels = async (patch: unknown, key: string, message: string) => {
     setError("");
+    setSavingKey(key);
     setStatus("保存中…");
     try {
-      const saved = await savePersonAdminProfile(profile);
+      const saved = await savePersonAdminProfile({ sectionLabels: patch as PersonSectionLabels });
       setProfile(saved);
       router.refresh();
-      setStatus("已保存，侧栏和前台名称会马上更新");
+      setStatus(message);
     } catch (err) {
       setStatus("");
       setError(err instanceof Error ? err.message : "保存失败");
+    } finally {
+      setSavingKey("");
     }
   };
+
+  const onSave = async () => {
+    await persistLabels(labels, "all", "已保存，侧栏和前台名称会马上更新");
+  };
+
+  const saveAdmin = (key: PersonAdminNavKey) =>
+    persistLabels(
+      { admin: { [key]: labels.admin[key] } },
+      `admin.${key}`,
+      `已单独保存「${labels.admin[key] || DEFAULT_SECTION_LABELS.admin[key]}」`,
+    );
+
+  const saveKind = (kind: (typeof PERSON_ENTRY_KINDS)[number]) =>
+    persistLabels(
+      { kinds: { [kind]: labels.kinds[kind] } },
+      `kinds.${kind}`,
+      `已单独保存「${labels.kinds[kind] || DEFAULT_SECTION_LABELS.kinds[kind]}」`,
+    );
+
+  const saveNav = (key: PersonPublicNavKey) =>
+    persistLabels(
+      { nav: { [key]: labels.nav[key] } },
+      `nav.${key}`,
+      `已单独保存「${labels.nav[key] || DEFAULT_SECTION_LABELS.nav[key]}」`,
+    );
+
+  const saveHome = (key: PersonHomeTitleKey) =>
+    persistLabels(
+      { home: { [key]: labels.home[key] } },
+      `home.${key}`,
+      `已单独保存「${labels.home[key] || DEFAULT_SECTION_LABELS.home[key]}」`,
+    );
 
   if (loading) return <p className="text-sm text-[var(--muted)]">加载栏目名称…</p>;
 
@@ -120,7 +170,7 @@ export function PersonAdminSectionLabelsForm() {
       <div>
         <h2 className="text-lg font-semibold">{labels.admin.sections}</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          改这里会同步后台侧栏、前台导航和首页区块标题。空着则回退默认名。
+          每个名称都可以单独改、单独保存。空着则回退默认名。
         </p>
       </div>
 
@@ -133,9 +183,11 @@ export function PersonAdminSectionLabelsForm() {
               label={DEFAULT_SECTION_LABELS.admin[key]}
               hint={ADMIN_HINT[key]}
               value={labels.admin[key]}
+              saving={savingKey === `admin.${key}`}
               onChange={(value) =>
                 setLabels({ ...labels, admin: { ...labels.admin, [key]: value } })
               }
+              onSave={() => void saveAdmin(key)}
             />
           ))}
           {PERSON_ENTRY_KINDS.map((kind) => (
@@ -144,9 +196,11 @@ export function PersonAdminSectionLabelsForm() {
               label={DEFAULT_SECTION_LABELS.kinds[kind]}
               hint="后台栏目"
               value={labels.kinds[kind]}
+              saving={savingKey === `kinds.${kind}`}
               onChange={(value) =>
                 setLabels({ ...labels, kinds: { ...labels.kinds, [kind]: value } })
               }
+              onSave={() => void saveKind(kind)}
             />
           ))}
         </div>
@@ -161,9 +215,11 @@ export function PersonAdminSectionLabelsForm() {
               label={DEFAULT_SECTION_LABELS.nav[key]}
               hint={NAV_HINT[key]}
               value={labels.nav[key]}
+              saving={savingKey === `nav.${key}`}
               onChange={(value) =>
                 setLabels({ ...labels, nav: { ...labels.nav, [key]: value } })
               }
+              onSave={() => void saveNav(key)}
             />
           ))}
         </div>
@@ -178,9 +234,11 @@ export function PersonAdminSectionLabelsForm() {
               label={DEFAULT_SECTION_LABELS.home[key]}
               hint={HOME_HINT[key]}
               value={labels.home[key]}
+              saving={savingKey === `home.${key}`}
               onChange={(value) =>
                 setLabels({ ...labels, home: { ...labels.home, [key]: value } })
               }
+              onSave={() => void saveHome(key)}
             />
           ))}
         </div>

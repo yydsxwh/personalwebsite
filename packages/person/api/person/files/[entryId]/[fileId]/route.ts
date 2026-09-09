@@ -3,7 +3,7 @@
  * 已发布栏目的附件预览 / 下载 / 文本。未发布的只有站长能看。
  */
 
-import { readFile, stat } from "fs/promises";
+import { open, readFile, stat } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
 import { getSession } from "@andyyyds/shared/auth";
@@ -66,6 +66,21 @@ function disposition(mode: string, fileName: string): string {
   return `${type}; filename*=UTF-8''${encoded}`;
 }
 
+function parseByteRange(header: string | null, size: number): { start: number; end: number } | null {
+  if (!header) return null;
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(header.trim());
+  if (!match) return null;
+  const hasStart = match[1] !== "";
+  const hasEnd = match[2] !== "";
+  if (!hasStart && !hasEnd) return null;
+  const start = hasStart ? Number(match[1]) : Math.max(0, size - Number(match[2]));
+  const end = hasEnd ? Number(match[2]) : size - 1;
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || start > end || start >= size) {
+    return null;
+  }
+  return { start, end: Math.min(end, size - 1) };
+}
+
 export async function GET(
   req: Request,
   ctx: { params: Promise<{ entryId: string; fileId: string }> },
@@ -107,12 +122,34 @@ export async function GET(
 
   const local = localUploadPath(file.url);
   if (local) {
+    const info = await stat(local);
+    const type = contentType(file.name, file.mime);
+    const range = mode === "preview" ? parseByteRange(req.headers.get("range"), info.size) : null;
+    if (range) {
+      const length = range.end - range.start + 1;
+      const handle = await open(local, "r");
+      const data = Buffer.alloc(length);
+      await handle.read(data, 0, length, range.start);
+      await handle.close();
+      return new NextResponse(data, {
+        status: 206,
+        headers: {
+          "Content-Type": type,
+          "Content-Disposition": disposition(mode, file.name),
+          "Accept-Ranges": "bytes",
+          "Content-Range": `bytes ${range.start}-${range.end}/${info.size}`,
+          "Content-Length": String(length),
+          "Cache-Control": "public, max-age=3600",
+        },
+      });
+    }
     const data = await readFile(local);
     return new NextResponse(data, {
       status: 200,
       headers: {
-        "Content-Type": contentType(file.name, file.mime),
+        "Content-Type": type,
         "Content-Disposition": disposition(mode, file.name),
+        "Accept-Ranges": "bytes",
         "Cache-Control": "public, max-age=3600",
         "Content-Length": String(data.length),
       },

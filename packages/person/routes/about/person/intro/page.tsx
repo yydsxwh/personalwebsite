@@ -1,6 +1,5 @@
 import { PersonSiteChrome } from "@andyyyds/person/components/person-site-chrome";
 import { PersonSiteSectionPage } from "@andyyyds/person/components/person-site-section-page";
-import { PersonFileGallery } from "@andyyyds/person/components/person-file-gallery";
 import { getPersonProfile, listPersonEntries } from "@andyyyds/person/lib/person-site-store";
 import { getSession } from "@andyyyds/shared/auth";
 import { isAdmin } from "@andyyyds/shared/roles";
@@ -14,18 +13,10 @@ export default async function PersonIntroPage() {
   return (
     <PersonSiteChrome profile={profile} showAdmin={Boolean(session && isAdmin(session))}>
       <PersonSiteSectionPage
-        title={profile.sectionLabels.kinds.INTRO_VIDEO}
+        title={profile.sectionLabels.nav.intro}
         intro="可以直接播放。也可以附上字幕、讲稿或其他文件。"
         entries={entries}
       />
-      {entries.map((entry) =>
-        entry.files.length ? (
-          <div key={entry.id} className="mt-8">
-            <h2 className="person-section-title">{entry.title}</h2>
-            <PersonFileGallery entryId={entry.id} files={entry.files} />
-          </div>
-        ) : null,
-      )}
     </PersonSiteChrome>
   );
 }

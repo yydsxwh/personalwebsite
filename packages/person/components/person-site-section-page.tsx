@@ -5,7 +5,7 @@ import {
   type PersonSectionLabels,
 } from "@andyyyds/person/lib/person-site";
 import { PersonEmpty, PersonEntryCard } from "@andyyyds/person/components/person-entry-card";
-import { PersonFileStrip } from "@andyyyds/person/components/person-file-gallery";
+import { PersonFileGallery, PersonFileStrip } from "@andyyyds/person/components/person-file-gallery";
 
 export function PersonSiteSectionPage({
   title,
@@ -33,7 +33,11 @@ export function PersonSiteSectionPage({
                 entry={entry}
                 showKind={kinds && kinds.length > 1 ? personKindLabel(labels, entry.kind) : undefined}
               />
-              <PersonFileStrip entryId={entry.id} files={entry.files || []} />
+              {(entry.files || []).some((file) => file.kind === "video" || file.kind === "audio") ? (
+                <PersonFileGallery entryId={entry.id} files={entry.files || []} />
+              ) : (
+                <PersonFileStrip entryId={entry.id} files={entry.files || []} />
+              )}
             </div>
           ))}
         </div>

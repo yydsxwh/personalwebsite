@@ -220,7 +220,7 @@ function clipName(raw: unknown): string {
 function clipUrl(raw: unknown): string {
   const text = String(raw ?? "").replace(/\u0000/g, "").trim().slice(0, 800);
   if (!text) return "";
-  if (/^(https?:\/\/|\/uploads\/|\/api\/)/i.test(text)) return text;
+  if (/^(https?:\/\/|\/uploads\/|\/api\/|vod:)/i.test(text)) return text;
   return "";
 }
 

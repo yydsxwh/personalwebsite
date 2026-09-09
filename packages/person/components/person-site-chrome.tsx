@@ -25,7 +25,8 @@ export function PersonSiteChrome({ profile, children, showAdmin }: Props) {
   const pathname = usePathname() || "/about/person";
   const [open, setOpen] = useState(false);
   const name = profile.displayName || "个人展示";
-  const nav = personPublicNavLinks(profile.sectionLabels || DEFAULT_SECTION_LABELS);
+  const onHome = pathname === "/about/person";
+  const nav = personPublicNavLinks(profile.sectionLabels || DEFAULT_SECTION_LABELS, onHome ? "home" : "pages");
 
   return (
     <div className="person-site">

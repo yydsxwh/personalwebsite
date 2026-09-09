@@ -62,16 +62,45 @@ export function PersonAdminEntriesPanel({
     });
   }, [kind]);
 
+  const persist = async (
+    next: Partial<PersonEntryPayload>,
+    opts?: { keepEditing?: boolean },
+  ) => {
+    const payload = { ...next, kind };
+    const saved = editingId
+      ? await savePersonAdminEntry(editingId, payload)
+      : await createPersonAdminEntry(payload);
+    await load();
+    if (opts?.keepEditing) {
+      setEditingId(saved.id);
+      setDraft(saved);
+    } else {
+      setDraft(emptyDraft(kind));
+      setEditingId(null);
+    }
+    return saved;
+  };
+
   const onSave = async () => {
     setError("");
     setStatus("保存中…");
     try {
-      if (editingId) await savePersonAdminEntry(editingId, { ...draft, kind });
-      else await createPersonAdminEntry({ ...draft, kind });
-      setDraft(emptyDraft(kind));
-      setEditingId(null);
-      await load();
-      setStatus("已保存");
+      await persist(draft);
+      setStatus("已保存，前台这个栏目会马上更新");
+    } catch (err) {
+      setStatus("");
+      setError(err instanceof Error ? err.message : "保存失败");
+    }
+  };
+
+  const onFilesChange = async (files: PersonEntryPayload["files"]) => {
+    const next = { ...draft, files, kind };
+    setDraft(next);
+    setError("");
+    setStatus("上传完成，正在保存本栏目…");
+    try {
+      await persist(next, { keepEditing: true });
+      setStatus("本栏目已单独保存，前台可以看到");
     } catch (err) {
       setStatus("");
       setError(err instanceof Error ? err.message : "保存失败");
@@ -93,7 +122,7 @@ export function PersonAdminEntriesPanel({
       <div>
         <h2 className="text-lg font-semibold">{label || PERSON_ENTRY_KIND_LABEL[kind]}</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          {personEntryAdminHint(kind)} 未发布的只留在后台。
+          {personEntryAdminHint(kind)} 每个栏目的修改点保存后只更新这一栏。未发布的只留在后台。
         </p>
       </div>
       <div className="grid gap-3">
@@ -165,8 +194,9 @@ export function PersonAdminEntriesPanel({
         </label>
         <PersonFilesField
           hint={personEntryAdminHint(kind)}
+          accept={kind === "INTRO_VIDEO" ? "video/mp4,video/webm,video/quicktime,video/*" : undefined}
           files={draft.files || []}
-          onChange={(files) => setDraft((current) => ({ ...current, files }))}
+          onChange={(files) => void onFilesChange(files)}
         />
         <PersonImageField
           label="封面 / 照片"
@@ -239,7 +269,7 @@ export function PersonAdminEntriesPanel({
         {status ? <p className="text-sm text-[var(--muted)]">{status}</p> : null}
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn btn-primary min-h-11 px-4 text-sm" onClick={() => void onSave()}>
-            {editingId ? "保存修改" : "新增一条"}
+            {editingId ? "保存本栏目" : "新增并保存本栏目"}
           </button>
           {editingId ? (
             <button

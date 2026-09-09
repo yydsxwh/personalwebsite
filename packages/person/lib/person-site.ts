@@ -226,6 +226,28 @@ function readLabelGroup<K extends string>(
   return next;
 }
 
+export function mergeSectionLabels(
+  base: PersonSectionLabels,
+  patch: unknown,
+): PersonSectionLabels {
+  if (patch == null || patch === "") return normalizeSectionLabels(base);
+  let value = patch;
+  if (typeof patch === "string") {
+    try {
+      value = JSON.parse(patch || "{}");
+    } catch {
+      return normalizeSectionLabels(base);
+    }
+  }
+  const input = value && typeof value === "object" ? (value as Partial<PersonSectionLabels>) : {};
+  return normalizeSectionLabels({
+    admin: { ...base.admin, ...input.admin },
+    kinds: { ...base.kinds, ...input.kinds },
+    nav: { ...base.nav, ...input.nav },
+    home: { ...base.home, ...input.home },
+  });
+}
+
 export function normalizeSectionLabels(raw: unknown): PersonSectionLabels {
   let value = raw;
   if (typeof raw === "string") {
@@ -480,16 +502,27 @@ export function personAdminNavLinks(labels: PersonSectionLabels) {
   ];
 }
 
-export function personPublicNavLinks(labels: PersonSectionLabels) {
+export const PERSON_HOME_NAV_SECTIONS = [
+  { key: "resume" as const, id: "resume", href: "/about/person/resume" },
+  { key: "intro" as const, id: "intro", href: "/about/person/intro" },
+  { key: "projects" as const, id: "projects", href: "/about/person/projects" },
+  { key: "blog" as const, id: "blog", href: "/about/person/blog" },
+  { key: "portfolio" as const, id: "portfolio", href: "/about/person/portfolio" },
+  { key: "honors" as const, id: "honors", href: "/about/person/honors" },
+  { key: "life" as const, id: "life", href: "/about/person/life" },
+  { key: "photos" as const, id: "photos", href: "/about/person/photos" },
+];
+
+export function personPublicNavLinks(
+  labels: PersonSectionLabels,
+  mode: "pages" | "home" = "pages",
+) {
   return [
     { href: "/about/person", label: labels.nav.about, match: "exact" as const },
-    { href: "/about/person/resume", label: labels.nav.resume, match: "prefix" as const },
-    { href: "/about/person/intro", label: labels.nav.intro, match: "prefix" as const },
-    { href: "/about/person/projects", label: labels.nav.projects, match: "prefix" as const },
-    { href: "/about/person/blog", label: labels.nav.blog, match: "prefix" as const },
-    { href: "/about/person/portfolio", label: labels.nav.portfolio, match: "prefix" as const },
-    { href: "/about/person/honors", label: labels.nav.honors, match: "prefix" as const },
-    { href: "/about/person/life", label: labels.nav.life, match: "prefix" as const },
-    { href: "/about/person/photos", label: labels.nav.photos, match: "prefix" as const },
+    ...PERSON_HOME_NAV_SECTIONS.map((section) => ({
+      href: mode === "home" ? `/about/person#${section.id}` : section.href,
+      label: labels.nav[section.key],
+      match: "prefix" as const,
+    })),
   ];
 }

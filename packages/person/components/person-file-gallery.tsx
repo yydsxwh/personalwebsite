@@ -47,8 +47,13 @@ function TextPreview({ entryId, file }: { entryId: string; file: PersonEntryFile
   return <pre className="person-code">{text}</pre>;
 }
 
+function mediaSrc(entryId: string, file: PersonEntryFile): string {
+  if (file.url.startsWith("/uploads/")) return file.url;
+  return personFilePreviewPath(entryId, file.id);
+}
+
 function FilePreview({ entryId, file }: { entryId: string; file: PersonEntryFile }) {
-  const src = personFilePreviewPath(entryId, file.id);
+  const src = mediaSrc(entryId, file);
   if (file.kind === "image" || file.kind === "animation") {
     return (
       // eslint-disable-next-line @next/next/no-img-element

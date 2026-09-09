@@ -13,10 +13,12 @@ export function PersonFilesField({
   hint,
   files,
   onChange,
+  accept,
 }: {
   hint: string;
   files: PersonEntryFile[];
   onChange: (files: PersonEntryFile[]) => void;
+  accept?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -54,6 +56,7 @@ export function PersonFilesField({
       <input
         ref={inputRef}
         type="file"
+        accept={accept}
         className="sr-only"
         onChange={(e) => {
           const file = e.target.files?.[0];
