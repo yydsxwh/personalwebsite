@@ -1,3 +1,7 @@
+import { personKindMetadata } from "@andyyyds/person/lib/person-page-metadata";
+
 export const dynamic = "force-dynamic";
-export const metadata = { title: "博客 / 技术随笔" };
+export function generateMetadata() {
+  return personKindMetadata("BLOG");
+}
 export { default } from "@andyyyds/person/routes/about/person/blog/page";

@@ -1,3 +1,7 @@
+import { personKindMetadata } from "@andyyyds/person/lib/person-page-metadata";
+
 export const dynamic = "force-dynamic";
-export const metadata = { title: "项目经历" };
+export function generateMetadata() {
+  return personKindMetadata("PROJECT");
+}
 export { default } from "@andyyyds/person/routes/about/person/projects/page";

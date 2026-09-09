@@ -1,3 +1,7 @@
+import { personHomeTitleMetadata } from "@andyyyds/person/lib/person-page-metadata";
+
 export const dynamic = "force-dynamic";
-export const metadata = { title: "成绩与荣誉" };
+export function generateMetadata() {
+  return personHomeTitleMetadata("honorsGroup");
+}
 export { default } from "@andyyyds/person/routes/about/person/honors/page";
