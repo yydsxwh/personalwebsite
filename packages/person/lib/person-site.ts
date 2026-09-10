@@ -147,6 +147,8 @@ export type PersonProfilePayload = {
   weibo: string;
   extraContacts: PersonExtraContact[];
   sectionLabels: PersonSectionLabels;
+  /** 前台顶栏和首页栏目共用这一套顺序。「管理」不在里面。 */
+  navOrder: PersonPublicNavKey[];
 };
 
 export type PersonEntryPayload = {
@@ -188,10 +190,41 @@ export const DEFAULT_PERSON_PROFILE: PersonProfilePayload = {
   weibo: "",
   extraContacts: [],
   sectionLabels: DEFAULT_SECTION_LABELS,
+  navOrder: [...PERSON_PUBLIC_NAV_KEYS],
 };
 
 export function isPersonEntryKind(value: string): value is PersonEntryKind {
   return (PERSON_ENTRY_KINDS as readonly string[]).includes(value);
+}
+
+export function isPersonPublicNavKey(value: string): value is PersonPublicNavKey {
+  return (PERSON_PUBLIC_NAV_KEYS as readonly string[]).includes(value);
+}
+
+/** 非法项丢掉，缺的栏目按默认顺序补在后面，保证九个导航都在。 */
+export function normalizeNavOrder(raw: unknown): PersonPublicNavKey[] {
+  let list: unknown[] = [];
+  if (typeof raw === "string") {
+    try {
+      list = JSON.parse(raw || "[]") as unknown[];
+    } catch {
+      list = [];
+    }
+  } else if (Array.isArray(raw)) {
+    list = raw;
+  }
+  const seen = new Set<PersonPublicNavKey>();
+  const next: PersonPublicNavKey[] = [];
+  for (const item of list) {
+    const key = String(item);
+    if (!isPersonPublicNavKey(key) || seen.has(key)) continue;
+    seen.add(key);
+    next.push(key);
+  }
+  for (const key of PERSON_PUBLIC_NAV_KEYS) {
+    if (!seen.has(key)) next.push(key);
+  }
+  return next;
 }
 
 function clip(raw: unknown, max: number): string {
@@ -314,8 +347,25 @@ export function normalizeImageList(raw: unknown): string[] {
     .slice(0, PERSON_MAX_IMAGES);
 }
 
+function navOrderFromLabelsBlob(raw: unknown): unknown {
+  let value = raw;
+  if (typeof raw === "string") {
+    try {
+      value = JSON.parse(raw || "{}");
+    } catch {
+      return undefined;
+    }
+  }
+  if (value && typeof value === "object" && "navOrder" in value) {
+    return (value as { navOrder?: unknown }).navOrder;
+  }
+  return undefined;
+}
+
 export function normalizePersonProfile(raw: unknown): PersonProfilePayload {
   const input = raw && typeof raw === "object" ? (raw as Partial<PersonProfilePayload>) : {};
+  const navOrderRaw =
+    input.navOrder != null ? input.navOrder : navOrderFromLabelsBlob(input.sectionLabels);
   return {
     displayName: clip(input.displayName, PERSON_NAME_MAX),
     headline: clip(input.headline, PERSON_HEADLINE_MAX),
@@ -334,6 +384,7 @@ export function normalizePersonProfile(raw: unknown): PersonProfilePayload {
     weibo: clipUrl(input.weibo),
     extraContacts: normalizeExtraContacts(input.extraContacts),
     sectionLabels: normalizeSectionLabels(input.sectionLabels),
+    navOrder: normalizeNavOrder(navOrderRaw),
   };
 }
 
@@ -505,27 +556,44 @@ export function personAdminNavLinks(labels: PersonSectionLabels) {
   ];
 }
 
-export const PERSON_HOME_NAV_SECTIONS = [
-  { key: "resume" as const, id: "resume", href: "/about/person/resume" },
-  { key: "intro" as const, id: "intro", href: "/about/person/intro" },
-  { key: "projects" as const, id: "projects", href: "/about/person/projects" },
-  { key: "blog" as const, id: "blog", href: "/about/person/blog" },
-  { key: "portfolio" as const, id: "portfolio", href: "/about/person/portfolio" },
-  { key: "honors" as const, id: "honors", href: "/about/person/honors" },
-  { key: "life" as const, id: "life", href: "/about/person/life" },
-  { key: "photos" as const, id: "photos", href: "/about/person/photos" },
-];
+export const PERSON_NAV_PAGE_HREF: Record<PersonPublicNavKey, string> = {
+  about: "/about/person",
+  resume: "/about/person/resume",
+  intro: "/about/person/intro",
+  projects: "/about/person/projects",
+  blog: "/about/person/blog",
+  portfolio: "/about/person/portfolio",
+  honors: "/about/person/honors",
+  life: "/about/person/life",
+  photos: "/about/person/photos",
+};
+
+export const PERSON_HOME_NAV_SECTIONS = PERSON_PUBLIC_NAV_KEYS.filter(
+  (key): key is Exclude<PersonPublicNavKey, "about"> => key !== "about",
+).map((key) => ({
+  key,
+  id: key,
+  href: PERSON_NAV_PAGE_HREF[key],
+}));
 
 export function personPublicNavLinks(
   labels: PersonSectionLabels,
   mode: "pages" | "home" = "pages",
+  navOrder: readonly string[] = PERSON_PUBLIC_NAV_KEYS,
 ) {
-  return [
-    { href: "/about/person", label: labels.nav.about, match: "exact" as const },
-    ...PERSON_HOME_NAV_SECTIONS.map((section) => ({
-      href: mode === "home" ? `/about/person#${section.id}` : section.href,
-      label: labels.nav[section.key],
+  return normalizeNavOrder(navOrder).map((key) => {
+    if (key === "about") {
+      return {
+        href: mode === "home" ? "/about/person#about" : PERSON_NAV_PAGE_HREF.about,
+        label: labels.nav.about,
+        match: "exact" as const,
+      };
+    }
+    const href = PERSON_NAV_PAGE_HREF[key];
+    return {
+      href: mode === "home" ? `/about/person#${key}` : href,
+      label: labels.nav[key],
       match: "prefix" as const,
-    })),
-  ];
+    };
+  });
 }

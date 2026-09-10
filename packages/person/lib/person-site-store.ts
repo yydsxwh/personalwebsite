@@ -112,20 +112,22 @@ export async function savePersonProfile(
       "sectionLabels" in raw
         ? mergeSectionLabels(existing.sectionLabels, raw.sectionLabels)
         : existing.sectionLabels,
+    navOrder: "navOrder" in raw ? raw.navOrder : existing.navOrder,
   });
-  const { extraContacts, sectionLabels, ...scalars } = profile;
+  const { extraContacts, sectionLabels, navOrder, ...scalars } = profile;
+  const sectionLabelsJson = JSON.stringify({ ...sectionLabels, navOrder });
   await prisma.personProfile.upsert({
     where: { id: PERSON_PROFILE_ID },
     create: {
       id: PERSON_PROFILE_ID,
       ...scalars,
       extraContacts: JSON.stringify(extraContacts),
-      sectionLabelsJson: JSON.stringify(sectionLabels),
+      sectionLabelsJson,
     },
     update: {
       ...scalars,
       extraContacts: JSON.stringify(extraContacts),
-      sectionLabelsJson: JSON.stringify(sectionLabels),
+      sectionLabelsJson,
     },
   });
   return profile;

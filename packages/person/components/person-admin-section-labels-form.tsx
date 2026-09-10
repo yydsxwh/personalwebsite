@@ -9,7 +9,7 @@ import {
   PERSON_ENTRY_KINDS,
   PERSON_HOME_TITLE_KEYS,
   PERSON_LABEL_MAX,
-  PERSON_PUBLIC_NAV_KEYS,
+  normalizeNavOrder,
   type PersonAdminNavKey,
   type PersonHomeTitleKey,
   type PersonProfilePayload,
@@ -48,6 +48,17 @@ const HOME_HINT: Record<PersonHomeTitleKey, string> = {
   honorsGroup: "成绩 + 荣誉合并标题",
   lifeGroup: "实践 + 活动合并标题",
 };
+
+function moveNavItem(order: PersonPublicNavKey[], from: number, to: number) {
+  if (from === to || from < 0 || to < 0 || from >= order.length || to >= order.length) {
+    return order;
+  }
+  const next = [...order];
+  const [item] = next.splice(from, 1);
+  if (!item) return order;
+  next.splice(to, 0, item);
+  return next;
+}
 
 function LabelField({
   label,
@@ -109,6 +120,9 @@ export function PersonAdminSectionLabelsForm() {
   }, []);
 
   const labels = profile.sectionLabels || DEFAULT_SECTION_LABELS;
+  const navOrder = normalizeNavOrder(profile.navOrder);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   const setLabels = (next: PersonSectionLabels) => {
     setProfile((current) => ({ ...current, sectionLabels: next }));
@@ -163,6 +177,31 @@ export function PersonAdminSectionLabelsForm() {
       `已单独保存「${labels.home[key] || DEFAULT_SECTION_LABELS.home[key]}」`,
     );
 
+  const persistNavOrder = async (nextOrder: PersonPublicNavKey[]) => {
+    const ordered = normalizeNavOrder(nextOrder);
+    setProfile((current) => ({ ...current, navOrder: ordered }));
+    setError("");
+    setSavingKey("navOrder");
+    setStatus("保存顺序中…");
+    try {
+      const saved = await savePersonAdminProfile({ navOrder: ordered });
+      setProfile(saved);
+      router.refresh();
+      setStatus("前台导航和首页栏目顺序已保存");
+    } catch (err) {
+      setStatus("");
+      setError(err instanceof Error ? err.message : "保存顺序失败");
+    } finally {
+      setSavingKey("");
+    }
+  };
+
+  const reorderNav = (from: number, to: number) => {
+    const next = moveNavItem(navOrder, from, to);
+    if (next === navOrder) return;
+    void persistNavOrder(next);
+  };
+
   if (loading) return <p className="text-sm text-[var(--muted)]">加载栏目名称…</p>;
 
   return (
@@ -170,7 +209,7 @@ export function PersonAdminSectionLabelsForm() {
       <div>
         <h2 className="text-lg font-semibold">{labels.admin.sections}</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          每个名称都可以单独改、单独保存。空着则回退默认名。
+          每个名称都可以单独改、单独保存。空着则回退默认名。前台顶栏可以拖动改顺序，首页栏目会跟着变。
         </p>
       </div>
 
@@ -207,20 +246,73 @@ export function PersonAdminSectionLabelsForm() {
       </section>
 
       <section className="grid gap-3">
-        <h3 className="text-sm font-semibold">前台导航</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {PERSON_PUBLIC_NAV_KEYS.map((key) => (
-            <LabelField
+        <h3 className="text-sm font-semibold">前台导航顺序</h3>
+        <p className="text-sm text-[var(--muted)]">
+          按住左边拖动，或用上移 / 下移。这里的顺序同时作用于前台顶栏和首页栏目。「管理」始终在最后，不能拖。
+        </p>
+        <div className="person-nav-order">
+          {navOrder.map((key, index) => (
+            <div
               key={key}
-              label={DEFAULT_SECTION_LABELS.nav[key]}
-              hint={NAV_HINT[key]}
-              value={labels.nav[key]}
-              saving={savingKey === `nav.${key}`}
-              onChange={(value) =>
-                setLabels({ ...labels, nav: { ...labels.nav, [key]: value } })
-              }
-              onSave={() => void saveNav(key)}
-            />
+              className={`person-nav-order-row${dragIndex === index ? " is-dragging" : ""}${overIndex === index ? " is-over" : ""}`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setOverIndex(index);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                const from = Number(event.dataTransfer.getData("text/plain"));
+                setDragIndex(null);
+                setOverIndex(null);
+                if (Number.isFinite(from)) reorderNav(from, index);
+              }}
+            >
+              <button
+                type="button"
+                className="person-nav-order-handle"
+                draggable
+                aria-label={`拖动调整「${labels.nav[key] || DEFAULT_SECTION_LABELS.nav[key]}」顺序`}
+                onDragStart={(event) => {
+                  event.dataTransfer.setData("text/plain", String(index));
+                  event.dataTransfer.effectAllowed = "move";
+                  setDragIndex(index);
+                }}
+                onDragEnd={() => {
+                  setDragIndex(null);
+                  setOverIndex(null);
+                }}
+              >
+                ⋮⋮
+              </button>
+              <LabelField
+                label={`${index + 1}. ${DEFAULT_SECTION_LABELS.nav[key]}`}
+                hint={NAV_HINT[key]}
+                value={labels.nav[key]}
+                saving={savingKey === `nav.${key}`}
+                onChange={(value) =>
+                  setLabels({ ...labels, nav: { ...labels.nav, [key]: value } })
+                }
+                onSave={() => void saveNav(key)}
+              />
+              <div className="person-nav-order-move">
+                <button
+                  type="button"
+                  className="btn btn-secondary min-h-11 px-3 text-sm"
+                  disabled={index === 0 || savingKey === "navOrder"}
+                  onClick={() => reorderNav(index, index - 1)}
+                >
+                  上移
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary min-h-11 px-3 text-sm"
+                  disabled={index === navOrder.length - 1 || savingKey === "navOrder"}
+                  onClick={() => reorderNav(index, index + 1)}
+                >
+                  下移
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       </section>

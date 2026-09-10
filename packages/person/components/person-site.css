@@ -345,3 +345,51 @@
   background: rgba(154, 123, 60, 0.14);
   color: #102033;
 }
+
+.person-nav-order {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.person-nav-order-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.7rem;
+  border: 1px solid var(--ps-line, rgba(16, 32, 51, 0.1));
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.person-nav-order-row.is-over {
+  border-color: #9a7b3c;
+  box-shadow: 0 0 0 2px rgba(154, 123, 60, 0.18);
+}
+
+.person-nav-order-row.is-dragging {
+  opacity: 0.55;
+}
+
+.person-nav-order-handle {
+  display: grid;
+  place-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  border: 0;
+  border-radius: 0.8rem;
+  background: rgba(16, 32, 51, 0.05);
+  color: #102033;
+  cursor: grab;
+  font-size: 1.05rem;
+  letter-spacing: -0.12em;
+}
+
+.person-nav-order-handle:active {
+  cursor: grabbing;
+}
+
+.person-nav-order-move {
+  display: grid;
+  gap: 0.3rem;
+}

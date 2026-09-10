@@ -4,6 +4,7 @@ import {
   mergeSectionLabels,
   buildPersonContactChips,
   normalizeExtraContacts,
+  normalizeNavOrder,
   normalizePersonEntry,
   normalizePersonProfile,
   normalizeSectionLabels,
@@ -128,6 +129,34 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   });
   assert.equal(profile.sectionLabels.kinds.PHOTO, "相册");
   assert.equal(profile.sectionLabels.kinds.RESUME, DEFAULT_SECTION_LABELS.kinds.RESUME);
+  assert.deepEqual(profile.navOrder, [...PERSON_PUBLIC_NAV_KEYS]);
+}
+
+{
+  const ordered = normalizeNavOrder(["photos", "bogus", "about", "photos"]);
+  assert.equal(ordered[0], "photos");
+  assert.equal(ordered[1], "about");
+  assert.ok(!ordered.includes("bogus" as never));
+  assert.deepEqual(
+    ordered.slice(2),
+    PERSON_PUBLIC_NAV_KEYS.filter((key) => key !== "photos" && key !== "about"),
+  );
+  const links = personPublicNavLinks(DEFAULT_SECTION_LABELS, "pages", ["photos", "intro"]);
+  assert.equal(links[0]?.label, DEFAULT_SECTION_LABELS.nav.photos);
+  assert.equal(links[1]?.label, DEFAULT_SECTION_LABELS.nav.intro);
+  assert.equal(links[2]?.label, DEFAULT_SECTION_LABELS.nav.about);
+  const homeLinks = personPublicNavLinks(DEFAULT_SECTION_LABELS, "home", ["intro", "about"]);
+  assert.equal(homeLinks[0]?.href, "/about/person#intro");
+  assert.equal(homeLinks[1]?.href, "/about/person#about");
+  const fromJson = normalizePersonProfile({
+    sectionLabels: JSON.stringify({
+      nav: { about: "About" },
+      navOrder: ["intro", "about"],
+    }),
+  });
+  assert.equal(fromJson.navOrder[0], "intro");
+  assert.equal(fromJson.navOrder[1], "about");
+  assert.ok(fromJson.navOrder.includes("photos"));
 }
 
 console.log("person-site tests ok");
