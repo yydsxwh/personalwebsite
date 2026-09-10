@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 export function LoginForm({ next }: { next?: string }) {
-  const [email, setEmail] = useState("admin@yyds.local");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -44,6 +44,7 @@ export function LoginForm({ next }: { next?: string }) {
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
+          placeholder="邮箱"
           autoComplete="username"
           required
         />
@@ -55,6 +56,7 @@ export function LoginForm({ next }: { next?: string }) {
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          placeholder="密码"
           autoComplete="current-password"
           required
           minLength={6}

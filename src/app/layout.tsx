@@ -1,23 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getPersonProfile } from "@andyyyds/person/lib/person-site-store";
 import { getSession } from "@andyyyds/shared/auth";
 import { isAdmin } from "@andyyyds/shared/roles";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: {
-    default: "Andyyyds",
-    template: "%s · Andyyyds",
-  },
-  description: "Andyyyds 个人 IP 展示站：档案、项目、博客、作品与自媒体。",
-  icons: {
-    icon: [{ url: "/favicon.ico", sizes: "any" }],
-  },
-};
+function siteNameFromProfile(displayName: string) {
+  return displayName.trim() || "个人展示";
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const profile = await getPersonProfile();
+  const name = siteNameFromProfile(profile.displayName);
+  return {
+    title: {
+      default: name,
+      template: `%s · ${name}`,
+    },
+    description: profile.headline.trim() || "个人展示站",
+    icons: {
+      icon: [{ url: "/favicon.ico", sizes: "any" }],
+    },
+  };
+}
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const session = await getSession();
+  const [session, profile] = await Promise.all([getSession(), getPersonProfile()]);
   const admin = Boolean(session && isAdmin(session));
+  const siteName = siteNameFromProfile(profile.displayName);
 
   return (
     <html lang="zh-Hans" className="h-full">
@@ -25,7 +35,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <header className="glass-bar border-b">
           <div className="container flex min-h-14 items-center justify-between gap-4">
             <Link href="/about/person" className="font-semibold tracking-wide">
-              Andyyyds
+              {siteName}
             </Link>
             <nav className="flex items-center gap-3 text-sm">
               <Link href="/about/person" className="text-[var(--muted)] hover:text-[var(--ink)]">

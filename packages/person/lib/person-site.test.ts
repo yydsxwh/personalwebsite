@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  DEFAULT_PERSON_PROFILE,
   DEFAULT_SECTION_LABELS,
   mergeSectionLabels,
   buildPersonContactChips,
@@ -17,6 +18,15 @@ import {
   personPublicNavLinks,
 } from "./person-site";
 import { classifyPersonFile, normalizePersonFiles } from "./person-files";
+
+{
+  assert.equal(DEFAULT_PERSON_PROFILE.displayName, "");
+  assert.equal(DEFAULT_PERSON_PROFILE.headline, "");
+  assert.equal(DEFAULT_PERSON_PROFILE.about, "");
+  assert.equal(DEFAULT_PERSON_PROFILE.email, "");
+  assert.equal(DEFAULT_PERSON_PROFILE.github, "");
+  assert.equal(DEFAULT_PERSON_PROFILE.website, "");
+}
 
 {
   const profile = normalizePersonProfile({

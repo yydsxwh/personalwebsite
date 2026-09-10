@@ -11,11 +11,11 @@ async function main() {
     update: { passwordHash, role: "ADMIN", roles: "ADMIN", passwordSet: true },
     create: {
       email: "admin@yyds.local",
-      name: "Andyyyds",
+      name: "站长",
       passwordHash,
       role: "ADMIN",
       roles: "ADMIN",
-      bio: "个人 IP 站站长",
+      bio: "",
       referralCode: makeReferralCode(),
     },
   });
@@ -31,13 +31,6 @@ async function main() {
     update: {},
     create: {
       id: "default",
-      displayName: "Andyyyds",
-      headline: "把个人 IP 做成可独立交付的软件产品",
-      about:
-        "这是从 Andyyyds 主站迁出的个人展示站。档案、项目、博客、作品、荣誉和自媒体同步都在这里维护。",
-      email: "yydsxwh@gmail.com",
-      github: "yydsxwh",
-      website: "https://github.com/yydsxwh/personalwebsite",
     },
   });
 

@@ -1,9 +1,8 @@
 /**
- * 个人展示站读写。档案空时用门户「个人介绍」垫一层，避免拆站前前台空白。
+ * 个人展示站读写。新站档案默认空白，由站长自己填，不预填示例个人信息。
  */
 
 import { prisma } from "@andyyyds/shared/db";
-import { getPortalConfig } from "@andyyyds/shared/site-settings";
 import { normalizePersonFiles } from "@andyyyds/person/lib/person-files";
 import {
   DEFAULT_PERSON_PROFILE,
@@ -67,36 +66,20 @@ function toEntryPayload(row: {
   };
 }
 
-async function fallbackProfileFromPortal(): Promise<PersonProfilePayload> {
-  const portal = await getPortalConfig();
-  return normalizePersonProfile({
-    ...DEFAULT_PERSON_PROFILE,
-    displayName: portal.person.title || "个人介绍",
-    headline: portal.person.subtitle,
-    about: portal.person.body,
-  });
+async function fallbackEmptyProfile(): Promise<PersonProfilePayload> {
+  return normalizePersonProfile(DEFAULT_PERSON_PROFILE);
 }
 
 export async function getPersonProfile(): Promise<PersonProfilePayload> {
   const row = await prisma.personProfile.findUnique({
     where: { id: PERSON_PROFILE_ID },
   });
-  if (!row) return fallbackProfileFromPortal();
-  const profile = normalizePersonProfile({
+  if (!row) return fallbackEmptyProfile();
+  return normalizePersonProfile({
     ...row,
     extraContacts: row.extraContacts,
     sectionLabels: row.sectionLabelsJson,
   });
-  if (!profile.displayName && !profile.about) {
-    const fallback = await fallbackProfileFromPortal();
-    return {
-      ...profile,
-      displayName: profile.displayName || fallback.displayName,
-      headline: profile.headline || fallback.headline,
-      about: profile.about || fallback.about,
-    };
-  }
-  return profile;
 }
 
 export async function savePersonProfile(
