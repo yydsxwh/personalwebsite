@@ -194,7 +194,6 @@ export function PersonAdminSectionLabelsForm() {
         navOrder: navOrderRef.current,
         sectionLabels: current.sectionLabels,
       }));
-      router.refresh();
       setStatus("前台导航和首页栏目顺序已保存");
     } catch (err) {
       setStatus("");
@@ -253,7 +252,11 @@ export function PersonAdminSectionLabelsForm() {
       if (Number.isFinite(nextOver)) setOverIndex(nextOver);
     };
 
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = "none";
+
     const onUp = (event: PointerEvent) => {
+      document.body.style.userSelect = previousUserSelect;
       const from = dragIndexRef.current;
       const to = rowAtPoint(event.clientY);
       dragIndexRef.current = null;
@@ -266,6 +269,7 @@ export function PersonAdminSectionLabelsForm() {
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
     return () => {
+      document.body.style.userSelect = previousUserSelect;
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
@@ -320,17 +324,19 @@ export function PersonAdminSectionLabelsForm() {
         <p className="text-sm text-[var(--muted)]">
           按住左边拖动，或用上移 / 下移。这里的顺序同时作用于前台顶栏和首页栏目。「管理」始终在最后，不能拖。
         </p>
-        <div className="person-nav-order" ref={listRef}>
+        <div className={`person-nav-order${dragIndex != null ? " is-sorting" : ""}`} ref={listRef}>
           {navOrder.map((key, index) => (
             <div
               key={key}
               data-nav-index={index}
               className={`person-nav-order-row${dragIndex === index ? " is-dragging" : ""}${overIndex === index ? " is-over" : ""}`}
+              onDragStart={(event) => event.preventDefault()}
             >
               <button
                 type="button"
                 className="person-nav-order-handle"
                 aria-label={`拖动调整「${labels.nav[key] || DEFAULT_SECTION_LABELS.nav[key]}」顺序`}
+                onDragStart={(event) => event.preventDefault()}
                 onPointerDown={(event) => {
                   if (event.button !== 0) return;
                   event.preventDefault();
@@ -372,6 +378,9 @@ export function PersonAdminSectionLabelsForm() {
             </div>
           ))}
         </div>
+        {savingKey === "navOrder" || status.includes("顺序") ? (
+          <p className="text-sm text-[var(--brand-strong)]">{status || "保存顺序中…"}</p>
+        ) : null}
       </section>
 
       <section className="grid gap-3">

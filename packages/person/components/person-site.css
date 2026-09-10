@@ -351,6 +351,11 @@
   gap: 0.65rem;
 }
 
+.person-nav-order.is-sorting,
+.person-nav-order.is-sorting * {
+  user-select: none !important;
+}
+
 .person-nav-order-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
