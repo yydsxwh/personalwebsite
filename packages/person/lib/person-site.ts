@@ -218,8 +218,10 @@ function readLabelGroup<K extends string>(
   keys: readonly K[],
   fallback: Record<K, string>,
 ): Record<K, string> {
-  const input = raw && typeof raw === "object" ? (raw as Partial<Record<K, unknown>>) : {};
-  const next = { ...fallback };
+  const input = (
+    raw && typeof raw === "object" ? raw : {}
+  ) as Partial<Record<K, unknown>>;
+  const next: Record<K, string> = { ...fallback };
   for (const key of keys) {
     next[key] = clipLabel(input[key], fallback[key]);
   }
@@ -491,14 +493,15 @@ export function personEntryHref(entry: Pick<PersonEntryPayload, "kind" | "id">):
 
 export function personAdminNavLinks(labels: PersonSectionLabels) {
   return [
-    { href: "/person-admin", label: labels.admin.overview, exact: true },
-    { href: "/person-admin/profile", label: labels.admin.profile },
-    { href: "/person-admin/sections", label: labels.admin.sections },
+    { href: "/person-admin", label: labels.admin.overview, exact: true as const },
+    { href: "/person-admin/profile", label: labels.admin.profile, exact: false as const },
+    { href: "/person-admin/sections", label: labels.admin.sections, exact: false as const },
     ...PERSON_ENTRY_KINDS.map((kind) => ({
       href: `/person-admin/entries/${kind.toLowerCase()}`,
       label: labels.kinds[kind],
+      exact: false as const,
     })),
-    { href: "/person-admin/social", label: labels.admin.social },
+    { href: "/person-admin/social", label: labels.admin.social, exact: false as const },
   ];
 }
 
