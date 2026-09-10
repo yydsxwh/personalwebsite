@@ -383,6 +383,8 @@
   cursor: grab;
   font-size: 1.05rem;
   letter-spacing: -0.12em;
+  touch-action: none;
+  user-select: none;
 }
 
 .person-nav-order-handle:active {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DEFAULT_PERSON_PROFILE,
   DEFAULT_SECTION_LABELS,
@@ -121,8 +121,13 @@ export function PersonAdminSectionLabelsForm() {
 
   const labels = profile.sectionLabels || DEFAULT_SECTION_LABELS;
   const navOrder = normalizeNavOrder(profile.navOrder);
+  const navOrderRef = useRef(navOrder);
+  navOrderRef.current = navOrder;
+  const listRef = useRef<HTMLDivElement>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  const dragIndexRef = useRef<number | null>(null);
 
   const setLabels = (next: PersonSectionLabels) => {
     setProfile((current) => ({ ...current, sectionLabels: next }));
@@ -179,13 +184,16 @@ export function PersonAdminSectionLabelsForm() {
 
   const persistNavOrder = async (nextOrder: PersonPublicNavKey[]) => {
     const ordered = normalizeNavOrder(nextOrder);
-    setProfile((current) => ({ ...current, navOrder: ordered }));
     setError("");
     setSavingKey("navOrder");
     setStatus("保存顺序中…");
     try {
       const saved = await savePersonAdminProfile({ navOrder: ordered });
-      setProfile(saved);
+      setProfile((current) => ({
+        ...saved,
+        navOrder: navOrderRef.current,
+        sectionLabels: current.sectionLabels,
+      }));
       router.refresh();
       setStatus("前台导航和首页栏目顺序已保存");
     } catch (err) {
@@ -196,11 +204,73 @@ export function PersonAdminSectionLabelsForm() {
     }
   };
 
-  const reorderNav = (from: number, to: number) => {
-    const next = moveNavItem(navOrder, from, to);
-    if (next === navOrder) return;
-    void persistNavOrder(next);
+  const scheduleNavOrderSave = (next: PersonPublicNavKey[]) => {
+    navOrderRef.current = next;
+    setProfile((current) => ({ ...current, navOrder: next }));
+    setStatus("顺序已改，正在保存…");
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      void persistNavOrder(navOrderRef.current);
+    }, 400);
   };
+
+  const reorderNav = (from: number, to: number) => {
+    const next = moveNavItem(navOrderRef.current, from, to);
+    if (next === navOrderRef.current) return;
+    scheduleNavOrderSave(next);
+  };
+  const reorderNavRef = useRef(reorderNav);
+  reorderNavRef.current = reorderNav;
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (dragIndex == null) return;
+
+    const rowAtPoint = (clientY: number) => {
+      const rows = listRef.current?.querySelectorAll<HTMLElement>("[data-nav-index]");
+      if (!rows?.length) return dragIndex;
+      for (const row of rows) {
+        const rect = row.getBoundingClientRect();
+        if (clientY >= rect.top && clientY <= rect.bottom) {
+          return Number(row.dataset.navIndex);
+        }
+      }
+      const first = rows[0]?.getBoundingClientRect();
+      const last = rows[rows.length - 1]?.getBoundingClientRect();
+      if (first && clientY < first.top) return 0;
+      if (last && clientY > last.bottom) return rows.length - 1;
+      return dragIndex;
+    };
+
+    const onMove = (event: PointerEvent) => {
+      event.preventDefault();
+      const nextOver = rowAtPoint(event.clientY);
+      if (Number.isFinite(nextOver)) setOverIndex(nextOver);
+    };
+
+    const onUp = (event: PointerEvent) => {
+      const from = dragIndexRef.current;
+      const to = rowAtPoint(event.clientY);
+      dragIndexRef.current = null;
+      setDragIndex(null);
+      setOverIndex(null);
+      if (from != null && Number.isFinite(to)) reorderNavRef.current(from, to);
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [dragIndex]);
 
   if (loading) return <p className="text-sm text-[var(--muted)]">加载栏目名称…</p>;
 
@@ -250,36 +320,23 @@ export function PersonAdminSectionLabelsForm() {
         <p className="text-sm text-[var(--muted)]">
           按住左边拖动，或用上移 / 下移。这里的顺序同时作用于前台顶栏和首页栏目。「管理」始终在最后，不能拖。
         </p>
-        <div className="person-nav-order">
+        <div className="person-nav-order" ref={listRef}>
           {navOrder.map((key, index) => (
             <div
               key={key}
+              data-nav-index={index}
               className={`person-nav-order-row${dragIndex === index ? " is-dragging" : ""}${overIndex === index ? " is-over" : ""}`}
-              onDragOver={(event) => {
-                event.preventDefault();
-                setOverIndex(index);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                const from = Number(event.dataTransfer.getData("text/plain"));
-                setDragIndex(null);
-                setOverIndex(null);
-                if (Number.isFinite(from)) reorderNav(from, index);
-              }}
             >
               <button
                 type="button"
                 className="person-nav-order-handle"
-                draggable
                 aria-label={`拖动调整「${labels.nav[key] || DEFAULT_SECTION_LABELS.nav[key]}」顺序`}
-                onDragStart={(event) => {
-                  event.dataTransfer.setData("text/plain", String(index));
-                  event.dataTransfer.effectAllowed = "move";
+                onPointerDown={(event) => {
+                  if (event.button !== 0) return;
+                  event.preventDefault();
+                  dragIndexRef.current = index;
                   setDragIndex(index);
-                }}
-                onDragEnd={() => {
-                  setDragIndex(null);
-                  setOverIndex(null);
+                  setOverIndex(index);
                 }}
               >
                 ⋮⋮
@@ -298,7 +355,7 @@ export function PersonAdminSectionLabelsForm() {
                 <button
                   type="button"
                   className="btn btn-secondary min-h-11 px-3 text-sm"
-                  disabled={index === 0 || savingKey === "navOrder"}
+                  disabled={index === 0}
                   onClick={() => reorderNav(index, index - 1)}
                 >
                   上移
@@ -306,7 +363,7 @@ export function PersonAdminSectionLabelsForm() {
                 <button
                   type="button"
                   className="btn btn-secondary min-h-11 px-3 text-sm"
-                  disabled={index === navOrder.length - 1 || savingKey === "navOrder"}
+                  disabled={index === navOrder.length - 1}
                   onClick={() => reorderNav(index, index + 1)}
                 >
                   下移
