@@ -71,14 +71,22 @@ if ! command -v node >/dev/null 2>&1 || ! node -v | grep -qE '^v(2[0-9]|[3-9])';
   apt-get install -y nodejs
 fi
 
-mkdir -p "$APP_DIR" "$DATA_DIR" "${APP_DIR}/public/uploads"
+mkdir -p "$ROOT_DIR" "$DATA_DIR"
 if [[ -d "$APP_DIR/.git" ]]; then
   git -C "$APP_DIR" fetch origin
   git -C "$APP_DIR" checkout "$BRANCH"
   git -C "$APP_DIR" pull --ff-only origin "$BRANCH"
 else
+  if [[ -e "$APP_DIR" ]]; then
+    if [[ -n "$(ls -A "$APP_DIR" 2>/dev/null)" ]]; then
+      echo "拒绝：${APP_DIR} 已有文件且不是本仓库，避免覆盖客户数据。"
+      exit 1
+    fi
+    rmdir "$APP_DIR"
+  fi
   git clone --branch "$BRANCH" "$REPO" "$APP_DIR"
 fi
+mkdir -p "${APP_DIR}/public/uploads"
 
 cd "$APP_DIR"
 
