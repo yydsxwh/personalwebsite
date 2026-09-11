@@ -7,10 +7,18 @@ export function PersonImageField({
   label,
   value,
   onChange,
+  saveLabel = "保存",
+  saving = false,
+  onSave,
+  onUploaded,
 }: {
   label: string;
   value: string;
   onChange: (url: string) => void;
+  saveLabel?: string;
+  saving?: boolean;
+  onSave?: () => void;
+  onUploaded?: (url: string) => Promise<void> | void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -21,7 +29,9 @@ export function PersonImageField({
     setBusy(true);
     setError("");
     try {
-      onChange(await uploadPersonAdminImage(file));
+      const url = await uploadPersonAdminImage(file);
+      onChange(url);
+      if (onUploaded) await onUploaded(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "上传失败");
     } finally {
@@ -30,21 +40,39 @@ export function PersonImageField({
   };
 
   return (
-    <label className="block text-xs text-[var(--muted)]">
+    <div className="block text-xs text-[var(--muted)]">
       {label}
-      <input
-        className="field mt-1 min-h-11 w-full rounded-xl px-3 text-sm"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="图片地址或点下方上传"
-      />
+      <div className="mt-1 flex gap-2">
+        <input
+          className="field min-h-11 w-full rounded-xl px-3 text-sm"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && onSave) {
+              e.preventDefault();
+              onSave();
+            }
+          }}
+          placeholder="图片地址或点下方上传"
+        />
+        {onSave ? (
+          <button
+            type="button"
+            className="btn btn-secondary min-h-11 shrink-0 px-3 text-sm"
+            disabled={saving || busy}
+            onClick={onSave}
+          >
+            {saving ? "保存中" : saveLabel}
+          </button>
+        ) : null}
+      </div>
       <button
         type="button"
         className="btn btn-secondary mt-2 min-h-11 px-3 text-sm"
-        disabled={busy}
+        disabled={busy || saving}
         onClick={() => inputRef.current?.click()}
       >
-        {busy ? "上传中…" : "上传图片"}
+        {busy ? (onUploaded ? "上传并保存中…" : "上传中…") : "上传图片"}
       </button>
       <input
         ref={inputRef}
@@ -62,6 +90,6 @@ export function PersonImageField({
         <img src={value} alt="" className="mt-2 max-h-32 rounded-xl object-cover" />
       ) : null}
       {error ? <p className="mt-1 text-[var(--fire)]">{error}</p> : null}
-    </label>
+    </div>
   );
 }
