@@ -43,3 +43,22 @@ sudo systemctl restart xiaowenhua
 ```
 
 不要在生产环境运行 `npm run db:reset`。
+
+## 给客户单独装一家站（不要和 xiaowenhua 混用）
+
+一家客户 = 一个目录 + 一个数据库 + 一份上传文件 + 一个端口。不要把客户域名解析到 3001，也不要拷 `/var/www/xiaowenhua`。
+
+```bash
+cd /path/to/personalwebsite
+SITE_ID=zhouyuding0825 DOMAIN=zhouyuding0825.com PORT=3002 sudo -E bash deploy/install-site.sh
+```
+
+客户域名解析（和你自己的站一样，指到香港 IP）：
+
+| 主机记录 | 类型 | 记录值 |
+|---------|------|--------|
+| `@` | A | `47.242.157.181` |
+| `www` | A | `47.242.157.181` |
+
+更新这一家时只进这一家的目录，例如 `/var/www/zhouyuding0825/app`，重启 `zhouyuding0825` 这个服务。不要动 xiaowenhua 的 `prod.db` 和 `uploads`。
+
