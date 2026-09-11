@@ -9,6 +9,7 @@ export function PersonImageField({
   onChange,
   saveLabel = "保存",
   saving = false,
+  saved = false,
   onSave,
   onUploaded,
 }: {
@@ -17,6 +18,7 @@ export function PersonImageField({
   onChange: (url: string) => void;
   saveLabel?: string;
   saving?: boolean;
+  saved?: boolean;
   onSave?: () => void;
   onUploaded?: (url: string) => Promise<void> | void;
 }) {
@@ -64,6 +66,15 @@ export function PersonImageField({
           >
             {saving ? "保存中" : saveLabel}
           </button>
+        ) : null}
+        {onSave ? (
+          <span
+            className={`min-h-11 shrink-0 self-center text-xs ${
+              saved ? "text-[var(--brand-strong)]" : "invisible"
+            }`}
+          >
+            已保存
+          </span>
         ) : null}
       </div>
       <button

@@ -35,6 +35,7 @@ function FieldSaveRow({
   label,
   hint,
   saving,
+  saved,
   onSave,
   saveLabel = "保存",
   children,
@@ -42,6 +43,7 @@ function FieldSaveRow({
   label: string;
   hint?: string;
   saving?: boolean;
+  saved?: boolean;
   onSave: () => void;
   saveLabel?: string;
   children: ReactNode;
@@ -60,6 +62,13 @@ function FieldSaveRow({
         >
           {saving ? "保存中" : saveLabel}
         </button>
+        <span
+          className={`min-h-11 shrink-0 self-start pt-3 text-xs ${
+            saved ? "text-[var(--brand-strong)]" : "invisible"
+          }`}
+        >
+          已保存
+        </span>
       </div>
     </div>
   );
@@ -71,6 +80,7 @@ export function PersonAdminProfileForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState("");
+  const [savedKey, setSavedKey] = useState("");
 
   useEffect(() => {
     void fetchPersonAdminProfile()
@@ -107,6 +117,7 @@ export function PersonAdminProfileForm() {
     try {
       await savePersonAdminProfile(patch);
       setProfile((current) => ({ ...current, ...patch }));
+      setSavedKey(key);
       setStatus(message);
     } catch (err) {
       setStatus("");
@@ -126,11 +137,12 @@ export function PersonAdminProfileForm() {
       <p className="text-sm text-[var(--muted)]">
         每一项单独保存，改完点右边按钮即可。头像和封面选好图片会马上保存，不用再点一次。
       </p>
-      {error ? <p className="text-sm text-[var(--fire)]">{error}</p> : null}
-      {status ? <p className="text-sm text-[var(--brand-strong)]">{status}</p> : null}
+      <p className="min-h-5 text-sm text-[var(--fire)]">{error || "\u00a0"}</p>
+      <p className="min-h-5 text-sm text-[var(--brand-strong)]">{status || "\u00a0"}</p>
       <FieldSaveRow
         label="姓名 / 对外称呼"
         saving={savingKey === "displayName"}
+        saved={savedKey === "displayName"}
         saveLabel="保存姓名"
         onSave={() => void saveText("displayName", "姓名已保存")}
       >
@@ -151,6 +163,7 @@ export function PersonAdminProfileForm() {
         label="个性签名"
         hint="一句话介绍"
         saving={savingKey === "headline"}
+        saved={savedKey === "headline"}
         saveLabel="保存签名"
         onSave={() => void saveText("headline", "个性签名已保存")}
       >
@@ -170,6 +183,7 @@ export function PersonAdminProfileForm() {
       <FieldSaveRow
         label="About me"
         saving={savingKey === "about"}
+        saved={savedKey === "about"}
         saveLabel="保存介绍"
         onSave={() => void saveText("about", "介绍已保存")}
       >
@@ -186,6 +200,7 @@ export function PersonAdminProfileForm() {
           value={profile.avatarUrl}
           saveLabel="保存头像"
           saving={savingKey === "avatarUrl"}
+          saved={savedKey === "avatarUrl"}
           onChange={(url) => setField("avatarUrl", url)}
           onSave={() => void saveText("avatarUrl", "头像已保存")}
           onUploaded={(url) => persist({ avatarUrl: url }, "avatarUrl", "头像已保存")}
@@ -195,6 +210,7 @@ export function PersonAdminProfileForm() {
           value={profile.coverUrl}
           saveLabel="保存封面"
           saving={savingKey === "coverUrl"}
+          saved={savedKey === "coverUrl"}
           onChange={(url) => setField("coverUrl", url)}
           onSave={() => void saveText("coverUrl", "封面已保存")}
           onUploaded={(url) => persist({ coverUrl: url }, "coverUrl", "封面已保存")}
@@ -206,6 +222,7 @@ export function PersonAdminProfileForm() {
             <FieldSaveRow
               label={field.label}
               saving={savingKey === field.key}
+              saved={savedKey === field.key}
               saveLabel={field.saveLabel}
               onSave={() => void saveText(field.key, `${field.label}已保存`)}
             >
@@ -262,6 +279,9 @@ export function PersonAdminProfileForm() {
           >
             {savingKey === "extraContacts" ? "保存中" : "保存联系方式"}
           </button>
+          {savedKey === "extraContacts" ? (
+            <span className="text-xs text-[var(--brand-strong)]">已保存</span>
+          ) : null}
         </div>
         <div className="mt-2 grid gap-2">
           {profile.extraContacts.map((item, index) => (
