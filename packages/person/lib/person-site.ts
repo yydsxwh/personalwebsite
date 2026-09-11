@@ -149,6 +149,8 @@ export type PersonProfilePayload = {
   sectionLabels: PersonSectionLabels;
   /** 前台顶栏和首页栏目共用这一套顺序。「管理」不在里面。 */
   navOrder: PersonPublicNavKey[];
+  /** false 时前台不显示 GitHub，后台仍可改账号。 */
+  showGithub: boolean;
 };
 
 export type PersonEntryPayload = {
@@ -191,6 +193,7 @@ export const DEFAULT_PERSON_PROFILE: PersonProfilePayload = {
   extraContacts: [],
   sectionLabels: DEFAULT_SECTION_LABELS,
   navOrder: [...PERSON_PUBLIC_NAV_KEYS],
+  showGithub: true,
 };
 
 export function isPersonEntryKind(value: string): value is PersonEntryKind {
@@ -362,10 +365,27 @@ function navOrderFromLabelsBlob(raw: unknown): unknown {
   return undefined;
 }
 
+function showGithubFromLabelsBlob(raw: unknown): boolean | undefined {
+  let value = raw;
+  if (typeof raw === "string") {
+    try {
+      value = JSON.parse(raw || "{}");
+    } catch {
+      return undefined;
+    }
+  }
+  if (value && typeof value === "object" && "showGithub" in value) {
+    return Boolean((value as { showGithub?: unknown }).showGithub);
+  }
+  return undefined;
+}
+
 export function normalizePersonProfile(raw: unknown): PersonProfilePayload {
   const input = raw && typeof raw === "object" ? (raw as Partial<PersonProfilePayload>) : {};
   const navOrderRaw =
     input.navOrder != null ? input.navOrder : navOrderFromLabelsBlob(input.sectionLabels);
+  const showGithubRaw =
+    input.showGithub != null ? input.showGithub : showGithubFromLabelsBlob(input.sectionLabels);
   return {
     displayName: clip(input.displayName, PERSON_NAME_MAX),
     headline: clip(input.headline, PERSON_HEADLINE_MAX),
@@ -385,6 +405,7 @@ export function normalizePersonProfile(raw: unknown): PersonProfilePayload {
     extraContacts: normalizeExtraContacts(input.extraContacts),
     sectionLabels: normalizeSectionLabels(input.sectionLabels),
     navOrder: normalizeNavOrder(navOrderRaw),
+    showGithub: showGithubRaw !== false,
   };
 }
 
@@ -466,15 +487,7 @@ export function buildPersonContactChips(
       href: "",
     });
   }
-  if (profile.website) {
-    chips.push({
-      key: "website",
-      label: "网站",
-      value: "个人网站",
-      href: profile.website,
-    });
-  }
-  if (profile.github) {
+  if (profile.github && profile.showGithub !== false) {
     chips.push({
       key: "github",
       label: "GitHub",

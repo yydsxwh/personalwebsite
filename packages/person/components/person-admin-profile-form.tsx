@@ -25,7 +25,6 @@ const CONTACT_FIELDS: { key: PersonProfileTextKey; label: string }[] = [
   { key: "wechat", label: "微信" },
   { key: "qq", label: "QQ" },
   { key: "location", label: "地点" },
-  { key: "website", label: "个人网站" },
   { key: "github", label: "GitHub" },
   { key: "linkedin", label: "LinkedIn" },
   { key: "zhihu", label: "知乎" },
@@ -120,17 +119,31 @@ export function PersonAdminProfileForm() {
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {CONTACT_FIELDS.map((field) => (
-          <label key={field.key} className="block text-xs text-[var(--muted)]">
-            {field.label}
-            <input
-              className="field mt-1 min-h-11 w-full rounded-xl px-3 text-sm"
-              value={String(profile[field.key] || "")}
-              onChange={(e) => setField(field.key, e.target.value)}
-            />
-          </label>
+          <div key={field.key} className="block text-xs text-[var(--muted)]">
+            <label className="block">
+              {field.label}
+              <input
+                className="field mt-1 min-h-11 w-full rounded-xl px-3 text-sm"
+                value={String(profile[field.key] || "")}
+                onChange={(e) => setField(field.key, e.target.value)}
+              />
+            </label>
+            {field.key === "github" ? (
+              <button
+                type="button"
+                className="btn btn-secondary mt-2 min-h-11 px-3 text-sm"
+                onClick={() =>
+                  setProfile((current) => ({ ...current, showGithub: current.showGithub === false }))
+                }
+              >
+                {profile.showGithub === false ? "前台已关闭，点击开启" : "前台显示中，点击关闭"}
+              </button>
+            ) : null}
+          </div>
         ))}
       </div>
       <p className="text-sm text-[var(--muted)]">
+        这里就是个人网站，前台不再单独放「网站」按钮。GitHub 可改账号，也可关掉不在前台显示。
         B站 / 抖音 / 小红书 / 视频号主页请到「自媒体同步」填写，避免两处各写一份。
       </p>
       <div>

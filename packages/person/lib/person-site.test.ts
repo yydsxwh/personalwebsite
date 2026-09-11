@@ -41,6 +41,23 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   const chips = buildPersonContactChips(profile);
   assert.ok(chips.some((chip) => chip.key === "email"));
   assert.ok(chips.some((chip) => chip.label === "工作微信"));
+  assert.ok(chips.some((chip) => chip.key === "github"));
+  assert.equal(profile.showGithub, true);
+}
+
+{
+  const withSite = normalizePersonProfile({
+    website: "https://github.com/yydsxwh/personalwebsite",
+    github: "octocat",
+    showGithub: false,
+  });
+  const chips = buildPersonContactChips(withSite);
+  assert.ok(!chips.some((chip) => chip.key === "website"));
+  assert.ok(!chips.some((chip) => chip.key === "github"));
+  const shown = buildPersonContactChips(
+    normalizePersonProfile({ github: "octocat", showGithub: true }),
+  );
+  assert.equal(shown.find((chip) => chip.key === "github")?.href, "https://github.com/octocat");
 }
 
 {
