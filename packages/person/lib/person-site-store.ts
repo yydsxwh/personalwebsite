@@ -401,5 +401,14 @@ export async function loadPersonSitePublic() {
     resumeCollections: collectionsByKind("RESUME"),
     portfolioCollections: collectionsByKind("PORTFOLIO"),
     projectCollections: collectionsByKind("PROJECT"),
+    introCollections: collectionsByKind("INTRO_VIDEO"),
+    blogCollections: collectionsByKind("BLOG"),
+    honorCollections: [...collectionsByKind("HONOR"), ...collectionsByKind("GRADE")],
+    lifeCollections: [
+      ...collectionsByKind("PRACTICE"),
+      ...collectionsByKind("ACTIVITY"),
+      ...collectionsByKind("INTEREST"),
+    ],
+    photoCollections: collectionsByKind("PHOTO"),
   };
 }

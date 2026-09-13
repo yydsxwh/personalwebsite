@@ -656,6 +656,27 @@ export const PERSON_NAV_PAGE_HREF: Record<PersonPublicNavKey, string> = {
   social: "/about/person/social",
 };
 
+/** 前台每个内容栏目对应哪些后台合集种类。关于是档案正文，自媒体走同步合集。 */
+export const PERSON_NAV_COLLECTION_KINDS: Partial<
+  Record<PersonPublicNavKey, readonly PersonEntryKind[]>
+> = {
+  resume: ["RESUME"],
+  intro: ["INTRO_VIDEO"],
+  projects: ["PROJECT"],
+  blog: ["BLOG"],
+  portfolio: ["PORTFOLIO"],
+  honors: ["HONOR", "GRADE"],
+  life: ["PRACTICE", "ACTIVITY", "INTEREST"],
+  photos: ["PHOTO"],
+};
+
+export function personCollectionsForNav(
+  key: PersonPublicNavKey,
+  byKind: Partial<Record<PersonEntryKind, PersonCollectionPayload[]>>,
+): PersonCollectionPayload[] {
+  return (PERSON_NAV_COLLECTION_KINDS[key] ?? []).flatMap((kind) => byKind[kind] ?? []);
+}
+
 export const PERSON_HOME_NAV_SECTIONS = PERSON_PUBLIC_NAV_KEYS.filter(
   (key): key is Exclude<PersonPublicNavKey, "about"> => key !== "about",
 ).map((key) => ({

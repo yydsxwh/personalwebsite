@@ -40,6 +40,11 @@ type Props = {
   resumeCollections: PersonCollectionPayload[];
   portfolioCollections: PersonCollectionPayload[];
   projectCollections: PersonCollectionPayload[];
+  introCollections: PersonCollectionPayload[];
+  blogCollections: PersonCollectionPayload[];
+  honorCollections: PersonCollectionPayload[];
+  lifeCollections: PersonCollectionPayload[];
+  photoCollections: PersonCollectionPayload[];
   albums: PersonSocialAlbumCard[];
   posts: PersonSocialCard[];
   pagination: PersonSocialPagination;
@@ -101,6 +106,17 @@ function ContactChip({
   );
 }
 
+function CollectionGrid({ items }: { items: PersonCollectionPayload[] }) {
+  if (!items.length) return null;
+  return (
+    <div className="person-grid person-grid-2">
+      {items.slice(0, 4).map((collection) => (
+        <PersonCollectionCard key={collection.id} collection={collection} />
+      ))}
+    </div>
+  );
+}
+
 function socialChips(accounts: PersonSocialAccounts) {
   const items: { label: string; href: string }[] = [];
   if (accounts.bilibili) items.push({ label: PERSON_SOCIAL_PLATFORM_LABEL.BILIBILI, href: accounts.bilibili });
@@ -135,6 +151,11 @@ export function PersonSiteHome({
   resumeCollections,
   portfolioCollections,
   projectCollections,
+  introCollections,
+  blogCollections,
+  honorCollections,
+  lifeCollections,
+  photoCollections,
   albums,
   posts,
   pagination,
@@ -186,13 +207,7 @@ export function PersonSiteHome({
         >
           {resumeCollections.length || resumes.length ? (
             <div className="grid gap-5">
-              {resumeCollections.length ? (
-                <div className="person-grid person-grid-2">
-                  {resumeCollections.slice(0, 4).map((collection) => (
-                    <PersonCollectionCard key={collection.id} collection={collection} />
-                  ))}
-                </div>
-              ) : null}
+              <CollectionGrid items={resumeCollections} />
               {resumes.slice(0, 2).map((entry) => (
                 <div key={entry.id}>
                   <PersonEntryCard entry={entry} />
@@ -215,10 +230,11 @@ export function PersonSiteHome({
         <Section
           id="intro"
           title={labels.nav.intro}
-          moreHref={introVideos.length > 1 ? "/about/person/intro" : undefined}
+          moreHref={introCollections.length || introVideos.length > 1 ? "/about/person/intro" : undefined}
         >
-          {introVideos.length ? (
+          {introCollections.length || introVideos.length ? (
             <div className="grid gap-5">
+              <CollectionGrid items={introCollections} />
               {introVideos.slice(0, 2).map((entry) => {
                 const video = firstPersonVideo(entry.files);
                 return (
@@ -260,13 +276,7 @@ export function PersonSiteHome({
         <Section id="projects" title={labels.nav.projects} moreHref={projects.length > 4 ? "/about/person/projects" : undefined}>
           {projectCollections.length || projects.length ? (
             <div className="grid gap-5">
-              {projectCollections.length ? (
-                <div className="person-grid person-grid-2">
-                  {projectCollections.slice(0, 4).map((collection) => (
-                    <PersonCollectionCard key={collection.id} collection={collection} />
-                  ))}
-                </div>
-              ) : null}
+              <CollectionGrid items={projectCollections} />
               <div className="person-grid person-grid-2">
                 {projects.slice(0, 4).map((entry) => (
                   <PersonEntryCard key={entry.id} entry={entry} />
@@ -281,12 +291,17 @@ export function PersonSiteHome({
     }
     if (key === "blog") {
       return (
-        <Section id="blog" title={labels.nav.blog} moreHref={blogs.length > 3 ? "/about/person/blog" : undefined}>
-          {blogs.length ? (
-            <div className="person-grid person-grid-2">
-              {blogs.slice(0, 4).map((entry) => (
-                <PersonEntryCard key={entry.id} entry={entry} />
-              ))}
+        <Section id="blog" title={labels.nav.blog} moreHref={blogCollections.length || blogs.length > 3 ? "/about/person/blog" : undefined}>
+          {blogCollections.length || blogs.length ? (
+            <div className="grid gap-5">
+              <CollectionGrid items={blogCollections} />
+              {blogs.length ? (
+                <div className="person-grid person-grid-2">
+                  {blogs.slice(0, 4).map((entry) => (
+                    <PersonEntryCard key={entry.id} entry={entry} />
+                  ))}
+                </div>
+              ) : null}
             </div>
           ) : (
             <PersonEmpty>技术随笔还没开始写。</PersonEmpty>
@@ -299,13 +314,7 @@ export function PersonSiteHome({
         <Section id="portfolio" title={labels.nav.portfolio} moreHref={portfolio.length > 3 ? "/about/person/portfolio" : undefined}>
           {portfolioCollections.length || portfolio.length ? (
             <div className="grid gap-5">
-              {portfolioCollections.length ? (
-                <div className="person-grid person-grid-2">
-                  {portfolioCollections.slice(0, 4).map((collection) => (
-                    <PersonCollectionCard key={collection.id} collection={collection} />
-                  ))}
-                </div>
-              ) : null}
+              <CollectionGrid items={portfolioCollections} />
               <div className="person-grid person-grid-3">
                 {portfolio.slice(0, 6).map((entry) => (
                   <PersonEntryCard key={entry.id} entry={entry} />
@@ -320,16 +329,21 @@ export function PersonSiteHome({
     }
     if (key === "honors") {
       return (
-        <Section id="honors" title={labels.nav.honors} moreHref={honorList.length ? "/about/person/honors" : undefined}>
-          {honorList.length ? (
-            <div className="person-grid person-grid-2">
-              {honorList.map((entry) => (
-                <PersonEntryCard
-                  key={entry.id}
-                  entry={entry}
-                  showKind={personKindLabel(labels, entry.kind)}
-                />
-              ))}
+        <Section id="honors" title={labels.nav.honors} moreHref={honorCollections.length || honorList.length ? "/about/person/honors" : undefined}>
+          {honorCollections.length || honorList.length ? (
+            <div className="grid gap-5">
+              <CollectionGrid items={honorCollections} />
+              {honorList.length ? (
+                <div className="person-grid person-grid-2">
+                  {honorList.map((entry) => (
+                    <PersonEntryCard
+                      key={entry.id}
+                      entry={entry}
+                      showKind={personKindLabel(labels, entry.kind)}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </div>
           ) : (
             <PersonEmpty>成绩、奖项与荣誉可在后台添加。</PersonEmpty>
@@ -350,9 +364,10 @@ export function PersonSiteHome({
     }
     if (key === "life") {
       return (
-        <Section id="life" title={labels.nav.life} moreHref={lifeList.length || interests.length ? "/about/person/life" : undefined}>
-          {lifeList.length || interests.length ? (
+        <Section id="life" title={labels.nav.life} moreHref={lifeCollections.length || lifeList.length || interests.length ? "/about/person/life" : undefined}>
+          {lifeCollections.length || lifeList.length || interests.length ? (
             <div className="grid gap-4">
+              <CollectionGrid items={lifeCollections} />
               {lifeList.length ? (
                 <div className="person-grid person-grid-2">
                   {lifeList.map((entry) => (
@@ -381,23 +396,28 @@ export function PersonSiteHome({
       );
     }
     return (
-      <Section id="photos" title={labels.nav.photos} moreHref={photos.length > 8 ? "/about/person/photos" : undefined}>
-        {photos.length ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {photos.slice(0, 8).map((photo) => {
-              const src = photo.coverUrl || photo.images[0];
-              if (!src) return null;
-              return (
-                <Link
-                  key={photo.id}
-                  href={personEntryHref(photo)}
-                  className="person-card overflow-hidden"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={photo.title} className="aspect-[4/3] w-full object-cover" />
-                </Link>
-              );
-            })}
+      <Section id="photos" title={labels.nav.photos} moreHref={photoCollections.length || photos.length > 8 ? "/about/person/photos" : undefined}>
+        {photoCollections.length || photos.length ? (
+          <div className="grid gap-5">
+            <CollectionGrid items={photoCollections} />
+            {photos.length ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {photos.slice(0, 8).map((photo) => {
+                  const src = photo.coverUrl || photo.images[0];
+                  if (!src) return null;
+                  return (
+                    <Link
+                      key={photo.id}
+                      href={personEntryHref(photo)}
+                      className="person-card overflow-hidden"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt={photo.title} className="aspect-[4/3] w-full object-cover" />
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
         ) : (
           <PersonEmpty>照片会显示在这里，后台添加后首页就能看到。</PersonEmpty>

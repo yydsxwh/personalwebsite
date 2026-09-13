@@ -56,6 +56,11 @@ export default async function PersonAboutPage({ searchParams }: Props) {
         resumeCollections={site.resumeCollections}
         portfolioCollections={site.portfolioCollections}
         projectCollections={site.projectCollections}
+        introCollections={site.introCollections}
+        blogCollections={site.blogCollections}
+        honorCollections={site.honorCollections}
+        lifeCollections={site.lifeCollections}
+        photoCollections={site.photoCollections}
         albums={albums.map((row) => ({
           id: row.id,
           platform: row.platform,

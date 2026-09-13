@@ -15,7 +15,9 @@ import {
   PERSON_NAV_PAGE_HREF,
   PERSON_PUBLIC_NAV_KEYS,
   personAdminNavLinks,
+  PERSON_NAV_COLLECTION_KINDS,
   personCollectionHref,
+  personCollectionsForNav,
   personEntryHref,
   personEntrySectionHref,
   personKindLabel,
@@ -215,6 +217,16 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   assert.equal(collection.kind, "RESUME");
   assert.equal(collection.title, "教培类工作简历");
   assert.equal(personCollectionHref("abc"), "/about/person/c/abc");
+  const contentNavs = PERSON_PUBLIC_NAV_KEYS.filter((key) => key !== "about" && key !== "social");
+  for (const key of contentNavs) {
+    assert.ok((PERSON_NAV_COLLECTION_KINDS[key] || []).length > 0, `${key} 必须能建合集`);
+  }
+  const grouped = personCollectionsForNav("honors", {
+    HONOR: [collection],
+    GRADE: [{ ...collection, id: "g1", kind: "GRADE", title: "成绩单" }],
+  });
+  assert.equal(grouped.length, 2);
+  assert.deepEqual(personCollectionsForNav("about", { RESUME: [collection] }), []);
 }
 
 console.log("person-site tests ok");
