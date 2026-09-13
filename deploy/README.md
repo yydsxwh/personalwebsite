@@ -1,78 +1,98 @@
-# 香港机双站部署
+# 香港机：一把钥匙，多个独立站
 
-目标机器：`47.242.157.181`（Ubuntu 22.04）。同一台机器跑三套互不干扰的站点：
+目标机器：`47.242.157.181`（Ubuntu 22.04）。**同一把 SSH 钥匙**放进 Cursor My Secrets 后，不同仓库的 Cloud Agent 都能登录这台机，但每个网站必须用自己的目录、数据库、上传目录和端口，不能互相拷 `prod.db` / `uploads` / `.env`。
 
-| 站点 | 域名 | 端口 | 目录 | 进程 |
+## 已经占用的站
+
+| 站点 | 域名 | 端口 | 目录 | 仓库 |
 |------|------|------|------|------|
-| Andyyyds 主站（已有，不要动） | `yydsxwh.com` / `www.yydsxwh.com` | 3000 | `/var/www/yyds-course-platform` | 原 Node / pm2 |
-| 自己的个人站 | `xiaowenhua.net` / `www` | 3001 | `/var/www/xiaowenhua` | `xiaowenhua` |
-| 客户站 | `zhouyuding0825.com` / `www` | 3002 | `/var/www/zhouyuding0825` | `zhouyuding0825` |
+| Andyyyds 主站 | `yydsxwh.com` | 3000 | `/var/www/yyds-course-platform` | `yydsxwh/Andyyyds` |
+| 自己的个人站 | `xiaowenhua.net` | 3001 | `/var/www/xiaowenhua` | `yydsxwh/personalwebsite` |
+| 客户站 | `zhouyuding0825.com` | 3002 | `/var/www/zhouyuding0825` | 同上，独立实例 |
 
-一家客户 = 一个目录 + 一个 SQLite + 一份上传文件 + 一个端口。不要拷 `prod.db` / `uploads` / `.env`。
+下一个新产品 / 下一家客户用 **3003 起**，`SITE_ID` 用小写目录名，例如 `valorant`、`account`。
 
-## 一键把两个个人站都上线
+## Cursor My Secrets（一次配置，多库复用）
 
-阿里云控制台打开这台香港机的「远程连接」，以 root 执行：
+打开 [Cloud Agents Secrets](https://cursor.com/dashboard/cloud-agents)，在 **My Secrets**（用户级）里加下面三项。若某个仓库用了单独的 Environment，再在那个环境里同样加一遍——环境级密钥不会自动带到别的环境。
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-site-deploy-b133/deploy/setup-both-sites.sh | sudo bash
+| 名称 | 类型 | 值 |
+|------|------|-----|
+| `DEPLOY_HOST` | Environment Variable | `47.242.157.181` |
+| `DEPLOY_USER` | Environment Variable | `root` |
+| `DEPLOY_SSH_KEY` | **Runtime Secret** | 私钥全文（`BEGIN OPENSSH PRIVATE KEY` 到 `END`，换行保留） |
+
+改密钥后必须**新开一个 Cloud Agent**，正在跑的对话读不到新钥匙。
+
+私钥只放 Secrets，不要提交到任何 git 仓库。公钥可以公开，需要写进服务器：
+
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOnoSIzmgruj6YEcUuhotrh0mfQ5v79r7dJb13iEK2kp cursor-hk-deploy
 ```
 
-脚本会：
+阿里云「远程连接」以 root 执行一次（只加钥匙，不动网站）：
 
-1. 写入 Cloud Agent 部署公钥（方便以后 SSH）
-2. 安装/更新 `xiaowenhua.net`（已有数据不重置）
-3. 安装/更新 `zhouyuding0825.com`（独立库，不和自己的站混用）
-4. DNS 已指向本机时申请 Let's Encrypt
+```bash
+curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-site-deploy-b133/deploy/add-agent-key.sh | sudo bash
+```
 
-不要动 `/var/www/yyds-course-platform`。
+你自己另造了一把时，把 `.pub` 整行赋给 `AGENT_PUBKEY` 再跑同一条命令。
 
-Cloud Agent 里若已配置 `DEPLOY_HOST` / `DEPLOY_USER` / `DEPLOY_SSH_KEY`：
+## 不同仓库怎么各部署各的站
+
+钥匙只负责登录。隔离靠目录和端口：
+
+```bash
+# 本仓库：自己的站
+sudo bash deploy/setup-on-server.sh
+
+# 本仓库：再给一家客户装一套（不要和 xiaowenhua 混）
+SITE_ID=zhouyuding0825 DOMAIN=zhouyuding0825.com PORT=3002 \
+  sudo -E bash deploy/install-site.sh
+
+# 别的产品仓库：SSH 上去后只动自己的目录，例如
+#   /var/www/valorant     3003
+#   /var/www/account      3004
+# 不要进 /var/www/xiaowenhua 或 /var/www/yyds-course-platform
+```
+
+Cloud Agent 已注入密钥时：
 
 ```bash
 bash deploy/push-from-agent.sh
 ```
 
-单站脚本仍可用：`deploy/setup-on-server.sh`（自己的站）、`deploy/install-site.sh`（客户站）。
+一把 SSH 钥匙能进整台机器，所以脚本必须写死「只改自己的目录」。不要在 Agent 里对别的产品做 `rm -rf /var/www`。
+
+## 两个个人站一键更新
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-site-deploy-b133/deploy/setup-both-sites.sh | sudo bash
+```
+
+- 已有 `prod.db` 不重置
+- 不改 Andyyyds 主站
+- DNS 已指向本机时申请 Let's Encrypt
 
 ## 域名解析
-
-两个个人站都指到同一台香港 IP：
 
 | 主机记录 | 类型 | 记录值 |
 |---------|------|--------|
 | `@` | A | `47.242.157.181` |
 | `www` | A | `47.242.157.181` |
 
-- `xiaowenhua.net`：解析已生效，HTTPS 应已可用。
-- `zhouyuding0825.com`：必须先能 `ping` 到 `47.242.157.181`，脚本才会申请证书。域名还没注册或 nameserver 未生效时是 `NXDOMAIN`，站已经在本机 3002 跑着，只是外网打不开这个域名。
+`xiaowenhua.net` 已生效。`zhouyuding0825.com` 仍是 NXDOMAIN 时，本机 3002 可以在跑，但外网打不开这个域名。
 
-安全组放行 **TCP 80、443**（SSH 22 保持已有规则）。
+安全组放行 **TCP 80、443**。
 
-## 以后只更新其中一家
+## 只更新其中一家
 
 ```bash
-# 自己的站
 cd /var/www/xiaowenhua/app
-sudo git fetch origin
-sudo git checkout cursor/hk-dual-site-deploy-b133
+sudo git fetch origin && sudo git checkout cursor/hk-dual-site-deploy-b133
 sudo git pull --ff-only origin cursor/hk-dual-site-deploy-b133
-sudo npm install
-sudo npx prisma db push
-sudo npm run build
+sudo npm install && sudo npx prisma db push && sudo npm run build
 sudo systemctl restart xiaowenhua
 ```
 
-```bash
-# 客户站（不要进 xiaowenhua 目录）
-cd /var/www/zhouyuding0825/app
-sudo git fetch origin
-sudo git checkout cursor/hk-dual-site-deploy-b133
-sudo git pull --ff-only origin cursor/hk-dual-site-deploy-b133
-sudo npm install
-sudo npx prisma db push
-sudo npm run build
-sudo systemctl restart zhouyuding0825
-```
-
-不要在生产环境运行 `npm run db:reset`。
+客户站把目录和服务名换成 `/var/www/zhouyuding0825`、`zhouyuding0825`。不要在生产跑 `npm run db:reset`。

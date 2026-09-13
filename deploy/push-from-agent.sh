@@ -31,8 +31,9 @@ if "\n" not in text and "BEGIN" in text:
             if body.endswith(footer):
                 body = body[: -len(footer)]
             if header == "-----BEGIN OPENSSH PRIVATE KEY-----":
-                body = body.strip()
-                text = header + "\n" + body + "\n" + footer + "\n"
+                body = "".join(body.split())
+                wrapped = "\n".join(body[i:i + 70] for i in range(0, len(body), 70))
+                text = header + "\n" + wrapped + "\n" + footer + "\n"
             else:
                 b64 = re.sub(r"[^A-Za-z0-9+/=]", "", body)
                 lines = [b64[i:i + 64] for i in range(0, len(b64), 64)]

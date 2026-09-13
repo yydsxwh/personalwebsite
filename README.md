@@ -52,7 +52,13 @@ prisma              数据模型（含主站其余表，便于整包迁出；本
 
 同一台 `47.242.157.181` 上：`xiaowenhua.net` 是自己的站，`zhouyuding0825.com` 是客户站，数据和上传目录完全分开。Andyyyds 主站 `yydsxwh.com` 不要动。
 
-阿里云「远程连接」执行：
+Cursor **My Secrets** 放一把 SSH 私钥（`DEPLOY_SSH_KEY`），每个仓库的 Cloud Agent 都能登录这台机，再按各自目录/端口部署，互不串数据。先加钥匙：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-site-deploy-b133/deploy/add-agent-key.sh | sudo bash
+```
+
+两个个人站一起更新：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-site-deploy-b133/deploy/setup-both-sites.sh | sudo bash
