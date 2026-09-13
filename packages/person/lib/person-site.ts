@@ -742,6 +742,32 @@ export function personCollectionHref(id: string): string {
   return `/about/person/c/${encodeURIComponent(id)}`;
 }
 
+/** 合集网格封面：优先封面图，其次笔记里的第一张图。 */
+export function personNoteCover(
+  entry: Pick<PersonEntryPayload, "coverUrl" | "images">,
+): string {
+  return entry.coverUrl || entry.images[0] || "";
+}
+
+export function personNoteImageCount(
+  entry: Pick<PersonEntryPayload, "coverUrl" | "images" | "files">,
+): number {
+  const urls = new Set<string>();
+  if (entry.coverUrl) urls.add(entry.coverUrl);
+  for (const src of entry.images || []) urls.add(src);
+  for (const file of entry.files || []) {
+    if (file.kind === "image" && file.url) urls.add(file.url);
+  }
+  return urls.size;
+}
+
+export function personNoteHasVideo(
+  entry: Pick<PersonEntryPayload, "kind" | "files">,
+): boolean {
+  if (entry.kind === "INTRO_VIDEO") return true;
+  return (entry.files || []).some((file) => file.kind === "video");
+}
+
 export function normalizePersonCollection(
   raw: unknown,
   fallbackKind: PersonEntryKind = "PORTFOLIO",

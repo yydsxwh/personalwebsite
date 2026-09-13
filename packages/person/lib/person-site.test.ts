@@ -21,6 +21,9 @@ import {
   personAdminNavLinks,
   PERSON_NAV_COLLECTION_KINDS,
   personCollectionHref,
+  personNoteCover,
+  personNoteHasVideo,
+  personNoteImageCount,
   personCollectionsForNav,
   personEntryHref,
   personEntrySectionHref,
@@ -258,6 +261,24 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   assert.equal(collectionDraft.kind, "RESUME");
   assert.equal(collectionDraft.title, "教培类工作简历");
   assert.equal(personCollectionHref("abc"), "/about/person/c/abc");
+  assert.equal(
+    personNoteCover({ coverUrl: "", images: ["https://example.com/a.jpg"] }),
+    "https://example.com/a.jpg",
+  );
+  assert.equal(
+    personNoteCover({ coverUrl: "https://example.com/cover.jpg", images: ["https://example.com/a.jpg"] }),
+    "https://example.com/cover.jpg",
+  );
+  assert.equal(
+    personNoteImageCount({
+      coverUrl: "https://example.com/cover.jpg",
+      images: ["https://example.com/cover.jpg", "https://example.com/b.jpg"],
+      files: [],
+    }),
+    2,
+  );
+  assert.equal(personNoteHasVideo({ kind: "INTRO_VIDEO", files: [] }), true);
+  assert.equal(personNoteHasVideo({ kind: "PORTFOLIO", files: [] }), false);
   const contentNavs = PERSON_PUBLIC_NAV_KEYS.filter((key) => key !== "about" && key !== "social");
   for (const key of contentNavs) {
     assert.ok((PERSON_NAV_COLLECTION_KINDS[key] || []).length > 0, `${key} 必须能建合集`);

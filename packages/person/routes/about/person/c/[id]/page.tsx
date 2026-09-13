@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { PersonSiteChrome } from "@andyyyds/person/components/person-site-chrome";
-import { PersonEmpty, PersonEntryCard } from "@andyyyds/person/components/person-entry-card";
-import { PersonFileGallery, PersonFileStrip } from "@andyyyds/person/components/person-file-gallery";
+import { PersonEmpty } from "@andyyyds/person/components/person-entry-card";
+import { PersonNoteGrid } from "@andyyyds/person/components/person-note-grid";
 import { personEntrySectionHref, personKindLabel } from "@andyyyds/person/lib/person-site";
 import {
   getPersonCollection,
@@ -41,25 +41,12 @@ export default async function PersonCollectionPage({
         <img src={collection.coverUrl} alt="" className="person-card mt-6 max-h-72 w-full object-cover" />
       ) : null}
       {entries.length ? (
-        <div className="person-grid person-grid-2 mt-8">
-          {entries.map((entry) => (
-            <div key={entry.id}>
-              <PersonEntryCard entry={entry} />
-              {(entry.files || []).some((file) => file.kind === "video" || file.kind === "audio") ? (
-                <PersonFileGallery
-                  entryId={entry.id}
-                  files={entry.files || []}
-                  allowDownload={entry.allowDownload}
-                />
-              ) : (
-                <PersonFileStrip
-                  entryId={entry.id}
-                  files={entry.files || []}
-                  allowDownload={entry.allowDownload}
-                />
-              )}
-            </div>
-          ))}
+        <div className="mt-8">
+          <p className="person-meta mb-3">{entries.length} 条笔记</p>
+          <PersonNoteGrid
+            entries={entries}
+            kindLabel={personKindLabel(profile.sectionLabels, collection.kind)}
+          />
         </div>
       ) : (
         <PersonEmpty>这个合集里还没有笔记。</PersonEmpty>
