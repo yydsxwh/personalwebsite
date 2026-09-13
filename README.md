@@ -47,3 +47,15 @@ prisma              数据模型（含主站其余表，便于整包迁出；本
 1. 本仓库已经能单独跑个人站，不必再依赖 Andyyyds 主站。
 2. 继续拆时，可把 Prisma 收成 `PersonProfile` / `PersonEntry` / `PersonSocial*` / `User` / `SiteSettings.personSocialJson`。
 3. 换域名只改 `NEXT_PUBLIC_SITE_URL` 和内容，不必改页面代码。
+
+## 香港机上线（两个个人站）
+
+同一台 `47.242.157.181` 上：`xiaowenhua.net` 是自己的站，`zhouyuding0825.com` 是客户站，数据和上传目录完全分开。Andyyyds 主站 `yydsxwh.com` 不要动。
+
+阿里云「远程连接」执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-site-deploy-b133/deploy/setup-both-sites.sh | sudo bash
+```
+
+详见 [deploy/README.md](deploy/README.md)。

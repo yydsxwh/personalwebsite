@@ -12,7 +12,7 @@ SITE_ID="${SITE_ID:-}"
 DOMAIN="${DOMAIN:-}"
 PORT="${PORT:-}"
 REPO="${REPO:-https://github.com/yydsxwh/personalwebsite.git}"
-BRANCH="${DEPLOY_BRANCH:-cursor/andyyyds-persona-product-d26b}"
+BRANCH="${DEPLOY_BRANCH:-cursor/hk-dual-site-deploy-b133}"
 EMAIL="${CERTBOT_EMAIL:-yydsxwh@gmail.com}"
 SERVER_IP="${SERVER_IP:-47.242.157.181}"
 

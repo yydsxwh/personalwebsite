@@ -11,7 +11,7 @@ DOMAIN="xiaowenhua.net"
 APP_DIR="/var/www/xiaowenhua/app"
 DATA_DIR="/var/www/xiaowenhua/data"
 REPO="https://github.com/yydsxwh/personalwebsite.git"
-BRANCH="${DEPLOY_BRANCH:-cursor/andyyyds-persona-product-d26b}"
+BRANCH="${DEPLOY_BRANCH:-cursor/hk-dual-site-deploy-b133}"
 PORT="3001"
 EMAIL="yydsxwh@gmail.com"
 

@@ -1,64 +1,78 @@
-# 把 xiaowenhua.net 绑到香港 Ubuntu 并上线
+# 香港机双站部署
 
-目标机器：`47.242.157.181`（Ubuntu 22.04）。个人站走 **3001** 端口，不占用旧站常用的 3000。
+目标机器：`47.242.157.181`（Ubuntu 22.04）。同一台机器跑三套互不干扰的站点：
 
-## 你需要在阿里云点的两步
+| 站点 | 域名 | 端口 | 目录 | 进程 |
+|------|------|------|------|------|
+| Andyyyds 主站（已有，不要动） | `yydsxwh.com` / `www.yydsxwh.com` | 3000 | `/var/www/yyds-course-platform` | 原 Node / pm2 |
+| 自己的个人站 | `xiaowenhua.net` / `www` | 3001 | `/var/www/xiaowenhua` | `xiaowenhua` |
+| 客户站 | `zhouyuding0825.com` / `www` | 3002 | `/var/www/zhouyuding0825` | `zhouyuding0825` |
 
-### 1. 域名解析（xiaowenhua.net）
+一家客户 = 一个目录 + 一个 SQLite + 一份上传文件 + 一个端口。不要拷 `prod.db` / `uploads` / `.env`。
 
-域名控制台 → 解析设置，各加一条：
+## 一键把两个个人站都上线
+
+阿里云控制台打开这台香港机的「远程连接」，以 root 执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-site-deploy-b133/deploy/setup-both-sites.sh | sudo bash
+```
+
+脚本会：
+
+1. 写入 Cloud Agent 部署公钥（方便以后 SSH）
+2. 安装/更新 `xiaowenhua.net`（已有数据不重置）
+3. 安装/更新 `zhouyuding0825.com`（独立库，不和自己的站混用）
+4. DNS 已指向本机时申请 Let's Encrypt
+
+不要动 `/var/www/yyds-course-platform`。
+
+Cloud Agent 里若已配置 `DEPLOY_HOST` / `DEPLOY_USER` / `DEPLOY_SSH_KEY`：
+
+```bash
+bash deploy/push-from-agent.sh
+```
+
+单站脚本仍可用：`deploy/setup-on-server.sh`（自己的站）、`deploy/install-site.sh`（客户站）。
+
+## 域名解析
+
+两个个人站都指到同一台香港 IP：
 
 | 主机记录 | 类型 | 记录值 |
 |---------|------|--------|
 | `@` | A | `47.242.157.181` |
 | `www` | A | `47.242.157.181` |
 
-TTL 用 10 分钟即可。用 `ping xiaowenhua.net` 看到这个 IP 再申请证书。
+- `xiaowenhua.net`：解析已生效，HTTPS 应已可用。
+- `zhouyuding0825.com`：必须先能 `ping` 到 `47.242.157.181`，脚本才会申请证书。域名还没注册或 nameserver 未生效时是 `NXDOMAIN`，站已经在本机 3002 跑着，只是外网打不开这个域名。
 
-### 2. 安全组
+安全组放行 **TCP 80、443**（SSH 22 保持已有规则）。
 
-香港实例入方向放行 **TCP 80、443**（SSH 22 保持已有规则）。
-
-## 在服务器上执行
-
-用控制台「远程连接」登录后：
+## 以后只更新其中一家
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/andyyyds-persona-product-d26b/deploy/setup-on-server.sh | sudo bash
-```
-
-代码目前在分支 `cursor/andyyyds-persona-product-d26b`（尚未合并 main）。脚本默认拉这个分支。
-
-脚本会：安装 Node 20 / Nginx、拉代码、建 SQLite、编译、用 systemd 常驻、配好 Nginx。DNS 已指向本机时会自动申请 Let's Encrypt 证书。
-
-## 更新代码
-
-```bash
+# 自己的站
 cd /var/www/xiaowenhua/app
-sudo git pull
+sudo git fetch origin
+sudo git checkout cursor/hk-dual-site-deploy-b133
+sudo git pull --ff-only origin cursor/hk-dual-site-deploy-b133
 sudo npm install
 sudo npx prisma db push
 sudo npm run build
 sudo systemctl restart xiaowenhua
 ```
 
-不要在生产环境运行 `npm run db:reset`。
-
-## 给客户单独装一家站（不要和 xiaowenhua 混用）
-
-一家客户 = 一个目录 + 一个数据库 + 一份上传文件 + 一个端口。不要把客户域名解析到 3001，也不要拷 `/var/www/xiaowenhua`。
-
 ```bash
-cd /path/to/personalwebsite
-SITE_ID=zhouyuding0825 DOMAIN=zhouyuding0825.com PORT=3002 sudo -E bash deploy/install-site.sh
+# 客户站（不要进 xiaowenhua 目录）
+cd /var/www/zhouyuding0825/app
+sudo git fetch origin
+sudo git checkout cursor/hk-dual-site-deploy-b133
+sudo git pull --ff-only origin cursor/hk-dual-site-deploy-b133
+sudo npm install
+sudo npx prisma db push
+sudo npm run build
+sudo systemctl restart zhouyuding0825
 ```
 
-客户域名解析（和你自己的站一样，指到香港 IP）：
-
-| 主机记录 | 类型 | 记录值 |
-|---------|------|--------|
-| `@` | A | `47.242.157.181` |
-| `www` | A | `47.242.157.181` |
-
-更新这一家时只进这一家的目录，例如 `/var/www/zhouyuding0825/app`，重启 `zhouyuding0825` 这个服务。不要动 xiaowenhua 的 `prod.db` 和 `uploads`。
-
+不要在生产环境运行 `npm run db:reset`。
