@@ -53,8 +53,20 @@ systemctl is-active xiaowenhua >/dev/null && echo "xiaowenhua: active" || echo "
 systemctl is-active "$CLIENT_SITE_ID" >/dev/null && echo "${CLIENT_SITE_ID}: active" || echo "${CLIENT_SITE_ID}: 未运行"
 systemctl is-active nginx >/dev/null && echo "nginx: active" || echo "nginx: 未运行"
 
-curl -fsS --max-time 8 -o /dev/null -w "xiaowenhua 本机3001: %{http_code}\n" "http://127.0.0.1:3001/about/person" || echo "xiaowenhua 本机3001: 无响应"
-curl -fsS --max-time 8 -o /dev/null -w "客户站本机${CLIENT_PORT}: %{http_code}\n" "http://127.0.0.1:${CLIENT_PORT}/about/person" || echo "客户站本机${CLIENT_PORT}: 无响应"
+wait_http() {
+  local url="$1" label="$2"
+  local i
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    if curl -fsS --max-time 8 -o /dev/null -w "${label}: %{http_code}\n" "$url"; then
+      return 0
+    fi
+    sleep 2
+  done
+  echo "${label}: 无响应"
+}
+
+wait_http "http://127.0.0.1:3001/about/person" "xiaowenhua 本机3001"
+wait_http "http://127.0.0.1:${CLIENT_PORT}/about/person" "客户站本机${CLIENT_PORT}"
 curl -fsS --max-time 8 -o /dev/null -H "Host: xiaowenhua.net" -w "nginx Host xiaowenhua.net: %{http_code}\n" "http://127.0.0.1/about/person" || true
 curl -fsS --max-time 8 -o /dev/null -H "Host: ${CLIENT_DOMAIN}" -w "nginx Host ${CLIENT_DOMAIN}: %{http_code}\n" "http://127.0.0.1/about/person" || true
 

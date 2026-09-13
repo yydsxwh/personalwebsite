@@ -137,9 +137,16 @@ systemctl enable --now "$SERVICE_NAME"
 systemctl restart "$SERVICE_NAME"
 systemctl reload nginx
 
-if curl -fsS --max-time 8 "http://127.0.0.1:${PORT}/about/person" >/dev/null; then
-  echo "本机 ${PORT} 端口已通（${DOMAIN}）。"
-else
+ready=0
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if curl -fsS --max-time 8 "http://127.0.0.1:${PORT}/about/person" >/dev/null; then
+    echo "本机 ${PORT} 端口已通（${DOMAIN}）。"
+    ready=1
+    break
+  fi
+  sleep 2
+done
+if [[ "$ready" -ne 1 ]]; then
   echo "警告：本机 ${PORT} 尚未响应，用 journalctl -u ${SERVICE_NAME} -n 50 查看日志。"
 fi
 

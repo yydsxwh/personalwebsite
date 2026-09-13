@@ -68,9 +68,16 @@ systemctl daemon-reload
 systemctl enable --now xiaowenhua
 systemctl reload nginx
 
-if curl -fsS --max-time 8 "http://127.0.0.1:${PORT}/about/person" >/dev/null; then
-  echo "本机 3001 端口已通。"
-else
+ready=0
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if curl -fsS --max-time 8 "http://127.0.0.1:${PORT}/about/person" >/dev/null; then
+    echo "本机 3001 端口已通。"
+    ready=1
+    break
+  fi
+  sleep 2
+done
+if [[ "$ready" -ne 1 ]]; then
   echo "警告：本机 3001 尚未响应，用 journalctl -u xiaowenhua -n 50 查看日志。"
 fi
 
