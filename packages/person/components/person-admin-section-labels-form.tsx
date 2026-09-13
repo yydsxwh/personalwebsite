@@ -38,6 +38,7 @@ const NAV_HINT: Record<PersonPublicNavKey, string> = {
   honors: "前台顶栏",
   life: "前台顶栏",
   photos: "前台顶栏",
+  social: "前台顶栏",
 };
 
 const HOME_HINT: Record<PersonHomeTitleKey, string> = {
@@ -322,7 +323,7 @@ export function PersonAdminSectionLabelsForm() {
       <section className="grid gap-3">
         <h3 className="text-sm font-semibold">前台导航顺序</h3>
         <p className="text-sm text-[var(--muted)]">
-          按住左边拖动，或用上移 / 下移。这里的顺序同时作用于前台顶栏和首页栏目。「管理」始终在最后，不能拖。
+          按住左边拖动，或用上移 / 下移。这里的顺序同时作用于前台顶栏和首页栏目。想把自媒体靠前，抓住「自媒体」往上拖即可。「管理」始终在最后，不能拖。
         </p>
         <div className={`person-nav-order${dragIndex != null ? " is-sorting" : ""}`} ref={listRef}>
           {navOrder.map((key, index) => (

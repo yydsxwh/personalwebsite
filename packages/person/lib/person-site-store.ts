@@ -10,8 +10,11 @@ import {
   isPersonEntryKind,
   mergeSectionLabels,
   normalizeImageList,
+  normalizePersonCollection,
   normalizePersonEntry,
   normalizePersonProfile,
+  normalizeTagList,
+  type PersonCollectionPayload,
   type PersonEntryKind,
   type PersonEntryPayload,
   type PersonProfilePayload,
@@ -32,6 +35,9 @@ function toEntryPayload(row: {
   coverUrl: string;
   images: string;
   files?: string;
+  collectionId?: string;
+  tagsJson?: string;
+  allowDownload?: boolean;
   org: string;
   role: string;
   period: string;
@@ -53,6 +59,9 @@ function toEntryPayload(row: {
     coverUrl: row.coverUrl,
     images: normalizeImageList(row.images),
     files: normalizePersonFiles(row.files),
+    collectionId: String(row.collectionId || ""),
+    tags: normalizeTagList(row.tagsJson),
+    allowDownload: Boolean(row.allowDownload),
     org: row.org,
     role: row.role,
     period: row.period,
@@ -63,6 +72,33 @@ function toEntryPayload(row: {
     featured: row.featured,
     occurredAt: row.occurredAt ? row.occurredAt.toISOString() : null,
     updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function toCollectionPayload(
+  row: {
+    id: string;
+    kind: string;
+    title: string;
+    summary: string;
+    coverUrl: string;
+    sortOrder: number;
+    published: boolean;
+    updatedAt: Date;
+  },
+  entryCount = 0,
+): PersonCollectionPayload {
+  const kind = isPersonEntryKind(row.kind) ? row.kind : "PORTFOLIO";
+  return {
+    id: row.id,
+    kind,
+    title: row.title,
+    summary: row.summary,
+    coverUrl: row.coverUrl,
+    sortOrder: row.sortOrder,
+    published: row.published,
+    updatedAt: row.updatedAt.toISOString(),
+    entryCount,
   };
 }
 
@@ -167,6 +203,9 @@ export async function createPersonEntry(input: unknown): Promise<PersonEntryPayl
       coverUrl: data.coverUrl,
       images: JSON.stringify(data.images),
       files: JSON.stringify(data.files),
+      collectionId: data.collectionId,
+      tagsJson: JSON.stringify(data.tags),
+      allowDownload: data.allowDownload,
       org: data.org,
       role: data.role,
       period: data.period,
@@ -206,6 +245,9 @@ export async function updatePersonEntry(
       coverUrl: data.coverUrl,
       images: JSON.stringify(data.images),
       files: JSON.stringify(data.files),
+      collectionId: data.collectionId,
+      tagsJson: JSON.stringify(data.tags),
+      allowDownload: data.allowDownload,
       org: data.org,
       role: data.role,
       period: data.period,
@@ -225,14 +267,125 @@ export async function deletePersonEntry(id: string): Promise<boolean> {
   return result.count > 0;
 }
 
+export async function listPersonCollections(input?: {
+  kind?: PersonEntryKind;
+  kinds?: PersonEntryKind[];
+  publishedOnly?: boolean;
+}): Promise<PersonCollectionPayload[]> {
+  const kinds = input?.kinds || (input?.kind ? [input.kind] : undefined);
+  const rows = await prisma.personCollection.findMany({
+    where: {
+      kind: kinds ? { in: kinds } : undefined,
+      published: input?.publishedOnly ? true : undefined,
+    },
+    orderBy: [{ sortOrder: "asc" }, { updatedAt: "desc" }],
+  });
+  if (!rows.length) return [];
+  const counts = await prisma.personEntry.groupBy({
+    by: ["collectionId"],
+    where: {
+      collectionId: { in: rows.map((row) => row.id) },
+      published: input?.publishedOnly ? true : undefined,
+    },
+    _count: { _all: true },
+  });
+  const countMap = new Map(counts.map((row) => [row.collectionId, row._count._all]));
+  return rows.map((row) => toCollectionPayload(row, countMap.get(row.id) || 0));
+}
+
+export async function getPersonCollection(
+  id: string,
+  publishedOnly = false,
+): Promise<PersonCollectionPayload | null> {
+  const row = await prisma.personCollection.findUnique({ where: { id } });
+  if (!row) return null;
+  if (publishedOnly && !row.published) return null;
+  const entryCount = await prisma.personEntry.count({
+    where: {
+      collectionId: id,
+      published: publishedOnly ? true : undefined,
+    },
+  });
+  return toCollectionPayload(row, entryCount);
+}
+
+export async function listPersonEntriesInCollection(
+  collectionId: string,
+  publishedOnly = false,
+): Promise<PersonEntryPayload[]> {
+  const rows = await prisma.personEntry.findMany({
+    where: {
+      collectionId,
+      published: publishedOnly ? true : undefined,
+    },
+    orderBy: [{ sortOrder: "asc" }, { occurredAt: "desc" }, { updatedAt: "desc" }],
+  });
+  return rows.map(toEntryPayload);
+}
+
+export async function createPersonCollection(input: unknown): Promise<PersonCollectionPayload> {
+  const data = normalizePersonCollection(input);
+  const count = await prisma.personCollection.count({ where: { kind: data.kind } });
+  const row = await prisma.personCollection.create({
+    data: {
+      kind: data.kind,
+      title: data.title || "未命名合集",
+      summary: data.summary,
+      coverUrl: data.coverUrl,
+      sortOrder: data.sortOrder || count,
+      published: data.published,
+    },
+  });
+  return toCollectionPayload(row, 0);
+}
+
+export async function updatePersonCollection(
+  id: string,
+  input: unknown,
+): Promise<PersonCollectionPayload | null> {
+  const existing = await prisma.personCollection.findUnique({ where: { id } });
+  if (!existing) return null;
+  const data = normalizePersonCollection(
+    input,
+    isPersonEntryKind(existing.kind) ? existing.kind : "PORTFOLIO",
+  );
+  const row = await prisma.personCollection.update({
+    where: { id },
+    data: {
+      kind: data.kind,
+      title: data.title || existing.title,
+      summary: data.summary,
+      coverUrl: data.coverUrl,
+      sortOrder: data.sortOrder,
+      published: data.published,
+    },
+  });
+  return getPersonCollection(row.id);
+}
+
+export async function deletePersonCollection(id: string): Promise<boolean> {
+  const existing = await prisma.personCollection.findUnique({ where: { id } });
+  if (!existing) return false;
+  await prisma.personEntry.updateMany({
+    where: { collectionId: id },
+    data: { collectionId: "" },
+  });
+  await prisma.personCollection.delete({ where: { id } });
+  return true;
+}
+
 export async function loadPersonSitePublic() {
-  const [profile, entries] = await Promise.all([
+  const [profile, entries, collections] = await Promise.all([
     getPersonProfile(),
     listPersonEntries({ publishedOnly: true }),
+    listPersonCollections({ publishedOnly: true }),
   ]);
   const byKind = (kind: PersonEntryKind) => entries.filter((item) => item.kind === kind);
+  const collectionsByKind = (kind: PersonEntryKind) =>
+    collections.filter((item) => item.kind === kind);
   return {
     profile,
+    collections,
     featured: entries.filter((item) => item.featured),
     projects: byKind("PROJECT"),
     blogs: byKind("BLOG"),
@@ -245,5 +398,8 @@ export async function loadPersonSitePublic() {
     photos: byKind("PHOTO"),
     resumes: byKind("RESUME"),
     introVideos: byKind("INTRO_VIDEO"),
+    resumeCollections: collectionsByKind("RESUME"),
+    portfolioCollections: collectionsByKind("PORTFOLIO"),
+    projectCollections: collectionsByKind("PROJECT"),
   };
 }

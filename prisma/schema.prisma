@@ -878,6 +878,12 @@ model PersonEntry {
   images     String    @default("[]")
   /// [{id,name,url,mime,size,kind}] 栏目附件：文档/视频/代码/压缩包等
   files      String    @default("[]")
+  /// 所属合集，空字符串表示未放入合集
+  collectionId String  @default("")
+  /// 笔记标签 JSON 字符串数组，类似小红书话题
+  tagsJson   String    @default("[]")
+  /// 访客能否下载这条笔记里的附件；默认只能预览
+  allowDownload Boolean @default(false)
   org        String    @default("")
   role       String    @default("")
   period     String    @default("")
@@ -892,6 +898,23 @@ model PersonEntry {
 
   @@index([kind, published, sortOrder])
   @@index([kind, featured])
+  @@index([collectionId, sortOrder])
+}
+
+/// 栏目合集：简历/作品/项目等都可以建多个合集，里面放笔记
+model PersonCollection {
+  id        String   @id @default(cuid())
+  /// 与 PersonEntry.kind 相同
+  kind      String
+  title     String   @default("")
+  summary   String   @default("")
+  coverUrl  String   @default("")
+  sortOrder Int      @default(0)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind, published, sortOrder])
 }
 
 /// 公众号已发表图文（freepublish 同步到本站「公司宣传」）

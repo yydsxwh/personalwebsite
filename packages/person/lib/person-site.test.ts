@@ -6,12 +6,16 @@ import {
   buildPersonContactChips,
   normalizeExtraContacts,
   normalizeNavOrder,
+  normalizePersonCollection,
   normalizePersonEntry,
   normalizePersonProfile,
   normalizeSectionLabels,
+  normalizeTagList,
   PERSON_HOME_NAV_SECTIONS,
+  PERSON_NAV_PAGE_HREF,
   PERSON_PUBLIC_NAV_KEYS,
   personAdminNavLinks,
+  personCollectionHref,
   personEntryHref,
   personEntrySectionHref,
   personKindLabel,
@@ -128,7 +132,11 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   const pageHrefs = personPublicNavLinks(DEFAULT_SECTION_LABELS).map((link) => link.href);
   const homeHrefs = personPublicNavLinks(DEFAULT_SECTION_LABELS, "home").map((link) => link.href);
   assert.ok(pageHrefs.includes("/about/person/intro"));
+  assert.ok(pageHrefs.includes("/about/person/social"));
   assert.ok(homeHrefs.includes("/about/person#intro"));
+  assert.ok(homeHrefs.includes("/about/person#social"));
+  assert.equal(PERSON_NAV_PAGE_HREF.social, "/about/person/social");
+  assert.ok(PERSON_PUBLIC_NAV_KEYS.includes("social"));
   assert.deepEqual(
     PERSON_HOME_NAV_SECTIONS.map((section) => section.key),
     PERSON_PUBLIC_NAV_KEYS.filter((key) => key !== "about"),
@@ -184,6 +192,29 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   assert.equal(fromJson.navOrder[0], "intro");
   assert.equal(fromJson.navOrder[1], "about");
   assert.ok(fromJson.navOrder.includes("photos"));
+  assert.ok(fromJson.navOrder.includes("social"));
+}
+
+{
+  const note = normalizePersonEntry({
+    kind: "PORTFOLIO",
+    title: "红烧肉",
+    tags: ["美食", "家常", "美食"],
+    allowDownload: true,
+    collectionId: "food-set",
+    body: "自己做的 😋",
+  });
+  assert.deepEqual(note.tags, ["美食", "家常"]);
+  assert.equal(note.allowDownload, true);
+  assert.equal(note.collectionId, "food-set");
+  assert.deepEqual(normalizeTagList("教培，运营 #金融"), ["教培", "运营", "金融"]);
+  const collection = normalizePersonCollection({
+    kind: "RESUME",
+    title: "教培类工作简历",
+  });
+  assert.equal(collection.kind, "RESUME");
+  assert.equal(collection.title, "教培类工作简历");
+  assert.equal(personCollectionHref("abc"), "/about/person/c/abc");
 }
 
 console.log("person-site tests ok");
