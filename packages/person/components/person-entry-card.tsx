@@ -31,8 +31,17 @@ export function PersonEntryCard({
         {entry.role ? (
           <p className="mt-auto text-xs text-[var(--ps-muted)]">{entry.role}</p>
         ) : null}
+        {entry.tags?.length ? (
+          <p className="mt-2 flex flex-wrap gap-1 text-xs text-[var(--ps-muted)]">
+            {entry.tags.map((tag) => (
+              <span key={tag}>#{tag}</span>
+            ))}
+          </p>
+        ) : null}
         {entry.files?.length ? (
-          <p className="text-xs text-[var(--ps-muted)]">{entry.files.length} 个附件，点开可预览或下载</p>
+          <p className="text-xs text-[var(--ps-muted)]">
+            {entry.files.length} 个附件，可预览{entry.allowDownload ? "或下载" : "，下载未开放"}
+          </p>
         ) : null}
       </div>
     </Link>

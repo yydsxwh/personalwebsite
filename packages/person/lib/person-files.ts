@@ -284,10 +284,10 @@ export function formatPersonFileSize(bytes: number): string {
 }
 
 export function personEntryAdminHint(kind: string): string {
-  if (kind === "RESUME") return "简历文档格式不限。访客可预览或下载。";
+  if (kind === "RESUME") return "简历文档格式不限。访客可预览；是否下载由这条笔记自己决定。";
   if (kind === "INTRO_VIDEO") return "上传视频自我介绍，访客可在栏目里直接播放。";
-  if (kind === "PROJECT") return "可上传开源代码、压缩包、文档或演示，访客可预览或下载。";
-  return "可上传图片、视频、文档、PDF、PPT、表格、LaTeX、Markdown、代码、压缩包或程序。访客可预览或下载。";
+  if (kind === "PROJECT") return "可上传开源代码、压缩包、文档或演示。访客可预览；下载需在笔记里打开开关。";
+  return "可上传图片、视频、音频、文档、PDF、PPT、表格、LaTeX、Markdown、代码、压缩包或程序。访客可预览；下载需在笔记里打开开关。";
 }
 
 export function firstPersonVideo(files: PersonEntryFile[]): PersonEntryFile | undefined {

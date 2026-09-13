@@ -95,7 +95,11 @@ export async function GET(
   if (!found) {
     return NextResponse.json({ error: "文件不存在或未发布" }, { status: 404 });
   }
-  const { file } = found;
+  const { file, entry } = found;
+
+  if (mode === "download" && publishedOnly && !entry.allowDownload) {
+    return NextResponse.json({ error: "作者未开放下载" }, { status: 403 });
+  }
 
   if (mode === "text") {
     if (!personFileIsTextLike(file.kind)) {

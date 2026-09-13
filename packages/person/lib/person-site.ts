@@ -60,6 +60,7 @@ export const PERSON_PUBLIC_NAV_KEYS = [
   "honors",
   "life",
   "photos",
+  "social",
 ] as const;
 
 export type PersonPublicNavKey = (typeof PERSON_PUBLIC_NAV_KEYS)[number];
@@ -100,6 +101,7 @@ export const DEFAULT_SECTION_LABELS: PersonSectionLabels = {
     honors: "荣誉",
     life: "经历",
     photos: "照片",
+    social: "自媒体",
   },
   home: {
     aboutMe: "关于我",
@@ -122,6 +124,8 @@ export const PERSON_CONTACT_MAX = 80;
 export const PERSON_URL_MAX = 400;
 export const PERSON_MAX_IMAGES = 12;
 export const PERSON_MAX_EXTRA_CONTACTS = 8;
+export const PERSON_MAX_TAGS = 12;
+export const PERSON_TAG_MAX = 20;
 
 export type PersonExtraContact = {
   label: string;
@@ -161,6 +165,9 @@ export type PersonEntryPayload = {
   body: string;
   coverUrl: string;
   images: string[];
+  collectionId: string;
+  tags: string[];
+  allowDownload: boolean;
   org: string;
   role: string;
   period: string;
@@ -172,6 +179,18 @@ export type PersonEntryPayload = {
   occurredAt: string | null;
   updatedAt: string;
   files: PersonEntryFile[];
+};
+
+export type PersonCollectionPayload = {
+  id: string;
+  kind: PersonEntryKind;
+  title: string;
+  summary: string;
+  coverUrl: string;
+  sortOrder: number;
+  published: boolean;
+  updatedAt: string;
+  entryCount: number;
 };
 
 export const DEFAULT_PERSON_PROFILE: PersonProfilePayload = {
@@ -204,7 +223,7 @@ export function isPersonPublicNavKey(value: string): value is PersonPublicNavKey
   return (PERSON_PUBLIC_NAV_KEYS as readonly string[]).includes(value);
 }
 
-/** 非法项丢掉，缺的栏目按默认顺序补在后面，保证九个导航都在。 */
+/** 非法项丢掉，缺的栏目按默认顺序补在后面，保证十个导航都在。 */
 export function normalizeNavOrder(raw: unknown): PersonPublicNavKey[] {
   let list: unknown[] = [];
   if (typeof raw === "string") {
@@ -333,6 +352,34 @@ export function normalizeExtraContacts(raw: unknown): PersonExtraContact[] {
     .slice(0, PERSON_MAX_EXTRA_CONTACTS);
 }
 
+export function normalizeTagList(raw: unknown): string[] {
+  let list: unknown[] = [];
+  if (typeof raw === "string") {
+    const text = raw.trim();
+    if (text.startsWith("[")) {
+      try {
+        list = JSON.parse(text || "[]") as unknown[];
+      } catch {
+        list = text.split(/[,，#]/);
+      }
+    } else if (text) {
+      list = text.split(/[,，#\s]+/);
+    }
+  } else if (Array.isArray(raw)) {
+    list = raw;
+  }
+  const seen = new Set<string>();
+  const next: string[] = [];
+  for (const item of list) {
+    const tag = clip(item, PERSON_TAG_MAX);
+    if (!tag || seen.has(tag)) continue;
+    seen.add(tag);
+    next.push(tag);
+    if (next.length >= PERSON_MAX_TAGS) break;
+  }
+  return next;
+}
+
 export function normalizeImageList(raw: unknown): string[] {
   let list: unknown[] = [];
   if (typeof raw === "string") {
@@ -427,6 +474,9 @@ export function normalizePersonEntry(
     coverUrl: clipUrl(input.coverUrl),
     images: normalizeImageList(input.images),
     files: normalizePersonFiles(input.files),
+    collectionId: clip(input.collectionId, 40),
+    tags: normalizeTagList((input as { tags?: unknown }).tags ?? (input as { tagsJson?: unknown }).tagsJson),
+    allowDownload: Boolean(input.allowDownload),
     org: clip(input.org, PERSON_TITLE_MAX),
     role: clip(input.role, PERSON_TITLE_MAX),
     period: clip(input.period, PERSON_CONTACT_MAX),
@@ -555,6 +605,30 @@ export function personEntryHref(entry: Pick<PersonEntryPayload, "kind" | "id">):
   return `/about/person/e/${entry.id}`;
 }
 
+export function personCollectionHref(id: string): string {
+  return `/about/person/c/${encodeURIComponent(id)}`;
+}
+
+export function normalizePersonCollection(
+  raw: unknown,
+  fallbackKind: PersonEntryKind = "PORTFOLIO",
+): Omit<PersonCollectionPayload, "id" | "updatedAt" | "entryCount"> & { id?: string } {
+  const input = raw && typeof raw === "object" ? (raw as Partial<PersonCollectionPayload>) : {};
+  const kind = isPersonEntryKind(String(input.kind || ""))
+    ? (input.kind as PersonEntryKind)
+    : fallbackKind;
+  const sort = Number(input.sortOrder);
+  return {
+    id: input.id ? String(input.id) : undefined,
+    kind,
+    title: clip(input.title, PERSON_TITLE_MAX),
+    summary: clip(input.summary, PERSON_SUMMARY_MAX),
+    coverUrl: clipUrl(input.coverUrl),
+    sortOrder: Number.isFinite(sort) ? Math.max(0, Math.min(9999, Math.round(sort))) : 0,
+    published: input.published !== false,
+  };
+}
+
 export function personAdminNavLinks(labels: PersonSectionLabels) {
   return [
     { href: "/person-admin", label: labels.admin.overview, exact: true as const },
@@ -579,6 +653,7 @@ export const PERSON_NAV_PAGE_HREF: Record<PersonPublicNavKey, string> = {
   honors: "/about/person/honors",
   life: "/about/person/life",
   photos: "/about/person/photos",
+  social: "/about/person/social",
 };
 
 export const PERSON_HOME_NAV_SECTIONS = PERSON_PUBLIC_NAV_KEYS.filter(

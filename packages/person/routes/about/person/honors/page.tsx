@@ -1,22 +1,28 @@
 import { PersonSiteChrome } from "@andyyyds/person/components/person-site-chrome";
 import { PersonSiteSectionPage } from "@andyyyds/person/components/person-site-section-page";
-import { getPersonProfile, listPersonEntries } from "@andyyyds/person/lib/person-site-store";
+import {
+  getPersonProfile,
+  listPersonCollections,
+  listPersonEntries,
+} from "@andyyyds/person/lib/person-site-store";
 import { getSession } from "@andyyyds/shared/auth";
 import { isAdmin } from "@andyyyds/shared/roles";
 
 export default async function PersonHonorsPage() {
-  const [profile, honors, grades, session] = await Promise.all([
+  const [profile, honors, grades, collections, session] = await Promise.all([
     getPersonProfile(),
     listPersonEntries({ kind: "HONOR", publishedOnly: true }),
     listPersonEntries({ kind: "GRADE", publishedOnly: true }),
+    listPersonCollections({ kinds: ["HONOR", "GRADE"], publishedOnly: true }),
     getSession(),
   ]);
   return (
     <PersonSiteChrome profile={profile} showAdmin={Boolean(session && isAdmin(session))}>
       <PersonSiteSectionPage
         title={profile.sectionLabels.home.honorsGroup}
-        intro="成绩、证书、竞赛与公开认可，按条目列出。"
+        intro="成绩、证书、竞赛与公开认可。也可以按比赛或年份收进合集。"
         entries={[...honors, ...grades]}
+        collections={collections}
         kinds={["HONOR", "GRADE"]}
         labels={profile.sectionLabels}
       />

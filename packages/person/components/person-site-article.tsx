@@ -21,6 +21,15 @@ export function PersonSiteArticle({
         {[entry.period, entry.org, entry.role, entry.location].filter(Boolean).join(" · ")}
       </p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">{entry.title}</h1>
+      {entry.tags?.length ? (
+        <p className="mt-3 flex flex-wrap gap-2 text-sm text-[var(--ps-muted)]">
+          {entry.tags.map((tag) => (
+            <span key={tag} className="person-chip">
+              #{tag}
+            </span>
+          ))}
+        </p>
+      ) : null}
       {entry.summary ? (
         <p className="mt-3 text-lg leading-8 text-[var(--ps-muted)]">{entry.summary}</p>
       ) : null}
@@ -39,7 +48,11 @@ export function PersonSiteArticle({
           ))}
         </div>
       ) : null}
-      <PersonFileGallery entryId={entry.id} files={entry.files || []} />
+      <PersonFileGallery
+        entryId={entry.id}
+        files={entry.files || []}
+        allowDownload={entry.allowDownload}
+      />
       {entry.link ? (
         <a
           href={entry.link}

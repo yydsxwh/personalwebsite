@@ -1,5 +1,6 @@
 import type { PersonEntryFile } from "@andyyyds/person/lib/person-files";
 import type {
+  PersonCollectionPayload,
   PersonEntryKind,
   PersonEntryPayload,
   PersonProfilePayload,
@@ -92,6 +93,59 @@ export async function deletePersonAdminEntry(id: string): Promise<void> {
   if (!res.ok) {
     const body = await readJson(res);
     throw new Error(errorMessage(body, "删除失败"));
+  }
+}
+
+export async function fetchPersonAdminCollections(
+  kind?: PersonEntryKind,
+): Promise<PersonCollectionPayload[]> {
+  const query = kind ? `?kind=${encodeURIComponent(kind)}` : "";
+  const res = await fetch(`/api/person-admin/collections${query}`, {
+    credentials: "same-origin",
+  });
+  const body = await readJson(res);
+  if (!res.ok) throw new Error(errorMessage(body, "无法加载合集"));
+  const items = (body as { items?: PersonCollectionPayload[] }).items;
+  return Array.isArray(items) ? items : [];
+}
+
+export async function createPersonAdminCollection(
+  input: Partial<PersonCollectionPayload>,
+): Promise<PersonCollectionPayload> {
+  const res = await fetch("/api/person-admin/collections", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const body = await readJson(res);
+  if (!res.ok) throw new Error(errorMessage(body, "新建合集失败"));
+  return body as PersonCollectionPayload;
+}
+
+export async function savePersonAdminCollection(
+  id: string,
+  input: Partial<PersonCollectionPayload>,
+): Promise<PersonCollectionPayload> {
+  const res = await fetch(`/api/person-admin/collections/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const body = await readJson(res);
+  if (!res.ok) throw new Error(errorMessage(body, "保存合集失败"));
+  return body as PersonCollectionPayload;
+}
+
+export async function deletePersonAdminCollection(id: string): Promise<void> {
+  const res = await fetch(`/api/person-admin/collections/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+  if (!res.ok) {
+    const body = await readJson(res);
+    throw new Error(errorMessage(body, "删除合集失败"));
   }
 }
 

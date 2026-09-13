@@ -6,6 +6,7 @@ import {
   buildPersonContactChips,
   personEntryHref,
   splitPersonAbout,
+  type PersonCollectionPayload,
   type PersonEntryPayload,
   type PersonProfilePayload,
   type PersonPublicNavKey,
@@ -16,6 +17,7 @@ import {
   type PersonSocialAccounts,
 } from "@andyyyds/person/lib/person-social";
 import { PersonSocialFeed, type PersonSocialAlbumCard, type PersonSocialCard, type PersonSocialPagination } from "@andyyyds/person/components/person-social-feed";
+import { PersonCollectionCard } from "@andyyyds/person/components/person-collection-card";
 import { PersonEmpty, PersonEntryCard } from "@andyyyds/person/components/person-entry-card";
 import { PersonFileGallery } from "@andyyyds/person/components/person-file-gallery";
 import { firstPersonVideo, personFilePreviewPath } from "@andyyyds/person/lib/person-files";
@@ -35,6 +37,9 @@ type Props = {
   photos: PersonEntryPayload[];
   resumes: PersonEntryPayload[];
   introVideos: PersonEntryPayload[];
+  resumeCollections: PersonCollectionPayload[];
+  portfolioCollections: PersonCollectionPayload[];
+  projectCollections: PersonCollectionPayload[];
   albums: PersonSocialAlbumCard[];
   posts: PersonSocialCard[];
   pagination: PersonSocialPagination;
@@ -127,6 +132,9 @@ export function PersonSiteHome({
   photos,
   resumes,
   introVideos,
+  resumeCollections,
+  portfolioCollections,
+  projectCollections,
   albums,
   posts,
   pagination,
@@ -176,17 +184,28 @@ export function PersonSiteHome({
           title={labels.nav.resume}
           moreHref={resumes.length > 1 ? "/about/person/resume" : undefined}
         >
-          {resumes.length ? (
+          {resumeCollections.length || resumes.length ? (
             <div className="grid gap-5">
+              {resumeCollections.length ? (
+                <div className="person-grid person-grid-2">
+                  {resumeCollections.slice(0, 4).map((collection) => (
+                    <PersonCollectionCard key={collection.id} collection={collection} />
+                  ))}
+                </div>
+              ) : null}
               {resumes.slice(0, 2).map((entry) => (
                 <div key={entry.id}>
                   <PersonEntryCard entry={entry} />
-                  <PersonFileGallery entryId={entry.id} files={entry.files} />
+                  <PersonFileGallery
+                    entryId={entry.id}
+                    files={entry.files}
+                    allowDownload={entry.allowDownload}
+                  />
                 </div>
               ))}
             </div>
           ) : (
-            <PersonEmpty>简历文档会在这里预览和下载。</PersonEmpty>
+            <PersonEmpty>简历文档会在这里预览。是否下载由每条笔记自己决定。</PersonEmpty>
           )}
         </Section>
       );
@@ -239,11 +258,20 @@ export function PersonSiteHome({
     if (key === "projects") {
       return (
         <Section id="projects" title={labels.nav.projects} moreHref={projects.length > 4 ? "/about/person/projects" : undefined}>
-          {projects.length ? (
-            <div className="person-grid person-grid-2">
-              {projects.slice(0, 4).map((entry) => (
-                <PersonEntryCard key={entry.id} entry={entry} />
-              ))}
+          {projectCollections.length || projects.length ? (
+            <div className="grid gap-5">
+              {projectCollections.length ? (
+                <div className="person-grid person-grid-2">
+                  {projectCollections.slice(0, 4).map((collection) => (
+                    <PersonCollectionCard key={collection.id} collection={collection} />
+                  ))}
+                </div>
+              ) : null}
+              <div className="person-grid person-grid-2">
+                {projects.slice(0, 4).map((entry) => (
+                  <PersonEntryCard key={entry.id} entry={entry} />
+                ))}
+              </div>
             </div>
           ) : (
             <PersonEmpty>项目经历将在这里展示。</PersonEmpty>
@@ -269,11 +297,20 @@ export function PersonSiteHome({
     if (key === "portfolio") {
       return (
         <Section id="portfolio" title={labels.nav.portfolio} moreHref={portfolio.length > 3 ? "/about/person/portfolio" : undefined}>
-          {portfolio.length ? (
-            <div className="person-grid person-grid-3">
-              {portfolio.slice(0, 6).map((entry) => (
-                <PersonEntryCard key={entry.id} entry={entry} />
-              ))}
+          {portfolioCollections.length || portfolio.length ? (
+            <div className="grid gap-5">
+              {portfolioCollections.length ? (
+                <div className="person-grid person-grid-2">
+                  {portfolioCollections.slice(0, 4).map((collection) => (
+                    <PersonCollectionCard key={collection.id} collection={collection} />
+                  ))}
+                </div>
+              ) : null}
+              <div className="person-grid person-grid-3">
+                {portfolio.slice(0, 6).map((entry) => (
+                  <PersonEntryCard key={entry.id} entry={entry} />
+                ))}
+              </div>
             </div>
           ) : (
             <PersonEmpty>作品集还是空的。</PersonEmpty>
@@ -296,6 +333,17 @@ export function PersonSiteHome({
             </div>
           ) : (
             <PersonEmpty>成绩、奖项与荣誉可在后台添加。</PersonEmpty>
+          )}
+        </Section>
+      );
+    }
+    if (key === "social") {
+      return (
+        <Section id="social" title={labels.nav.social} moreHref="/about/person/social">
+          {personSocialHasAccount(socialAccounts) || albums.length || posts.length ? (
+            <PersonSocialFeed albums={albums} posts={posts} pagination={pagination} />
+          ) : (
+            <PersonEmpty>同步抖音、B站、小红书、视频号后，这里会显示投稿和合集。</PersonEmpty>
           )}
         </Section>
       );
@@ -438,11 +486,6 @@ export function PersonSiteHome({
         </Section>
       ) : null}
 
-      {personSocialHasAccount(socialAccounts) || albums.length || posts.length ? (
-        <Section id="social" title={labels.home.social}>
-          <PersonSocialFeed albums={albums} posts={posts} pagination={pagination} />
-        </Section>
-      ) : null}
     </div>
   );
 }

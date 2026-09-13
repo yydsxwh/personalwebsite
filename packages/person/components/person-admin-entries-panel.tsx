@@ -5,6 +5,7 @@ import { personEntryAdminHint } from "@andyyyds/person/lib/person-files";
 import {
   PERSON_ENTRY_KIND_LABEL,
   PERSON_MAX_IMAGES,
+  type PersonCollectionPayload,
   type PersonEntryKind,
   type PersonEntryPayload,
 } from "@andyyyds/person/lib/person-site";
@@ -14,6 +15,7 @@ import {
   fetchPersonAdminEntries,
   savePersonAdminEntry,
 } from "@andyyyds/person/lib/person-site-client";
+import { PersonAdminCollectionsPanel } from "@andyyyds/person/components/person-admin-collections-panel";
 import { PersonFilesField } from "@andyyyds/person/components/person-files-field";
 import { PersonImageField } from "@andyyyds/person/components/person-image-field";
 
@@ -25,6 +27,9 @@ function emptyDraft(kind: PersonEntryKind): Partial<PersonEntryPayload> {
     body: "",
     coverUrl: "",
     images: [],
+    collectionId: "",
+    tags: [],
+    allowDownload: false,
     org: "",
     role: "",
     period: "",
@@ -44,10 +49,12 @@ export function PersonAdminEntriesPanel({
   label?: string;
 }) {
   const [items, setItems] = useState<PersonEntryPayload[]>([]);
+  const [collections, setCollections] = useState<PersonCollectionPayload[]>([]);
   const [draft, setDraft] = useState<Partial<PersonEntryPayload>>(emptyDraft(kind));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const kindLabel = label || PERSON_ENTRY_KIND_LABEL[kind];
 
   const load = async () => {
     const next = await fetchPersonAdminEntries(kind);
@@ -120,12 +127,30 @@ export function PersonAdminEntriesPanel({
   return (
     <div className="grid gap-6">
       <div>
-        <h2 className="text-lg font-semibold">{label || PERSON_ENTRY_KIND_LABEL[kind]}</h2>
+        <h2 className="text-lg font-semibold">{kindLabel}</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          {personEntryAdminHint(kind)} 每个栏目的修改点保存后只更新这一栏。未发布的只留在后台。
+          先建合集，再写笔记。笔记里可以放文字、表情、图片、视频、音频、标签和各种文件。
+          访客默认只能预览文件，要下载需在下面打开开关。未发布的只留在后台。
         </p>
       </div>
+      <PersonAdminCollectionsPanel kind={kind} label={kindLabel} onChange={setCollections} />
       <div className="grid gap-3">
+        <h3 className="text-base font-semibold">笔记</h3>
+        <label className="block text-xs text-[var(--muted)]">
+          所属合集
+          <select
+            className="field mt-1 min-h-11 w-full rounded-xl px-3 text-sm"
+            value={draft.collectionId || ""}
+            onChange={(e) => setDraft((current) => ({ ...current, collectionId: e.target.value }))}
+          >
+            <option value="">不放入合集</option>
+            {collections.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.title}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="block text-xs text-[var(--muted)]">
           标题
           <input
@@ -177,11 +202,29 @@ export function PersonAdminEntriesPanel({
           />
         </label>
         <label className="block text-xs text-[var(--muted)]">
-          正文
+          正文（可写文字和表情）
           <textarea
             className="field mt-1 min-h-36 w-full rounded-xl px-3 py-2 text-sm"
             value={draft.body || ""}
             onChange={(e) => setDraft((current) => ({ ...current, body: e.target.value }))}
+            placeholder="像小红书笔记一样写，也可以贴 😊🔥"
+          />
+        </label>
+        <label className="block text-xs text-[var(--muted)]">
+          标签（逗号分隔，类似话题）
+          <input
+            className="field mt-1 min-h-11 w-full rounded-xl px-3 text-sm"
+            value={(draft.tags || []).join("，")}
+            onChange={(e) =>
+              setDraft((current) => ({
+                ...current,
+                tags: e.target.value
+                  .split(/[,，#]/)
+                  .map((item) => item.trim())
+                  .filter(Boolean),
+              }))
+            }
+            placeholder="美食，家常菜，教程"
           />
         </label>
         <label className="block text-xs text-[var(--muted)]">
@@ -265,11 +308,19 @@ export function PersonAdminEntriesPanel({
           />
           首页精选
         </label>
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={Boolean(draft.allowDownload)}
+            onChange={(e) => setDraft((current) => ({ ...current, allowDownload: e.target.checked }))}
+          />
+          允许访客下载这条笔记里的文件（默认只能预览）
+        </label>
         {error ? <p className="text-sm text-[var(--fire)]">{error}</p> : null}
         {status ? <p className="text-sm text-[var(--muted)]">{status}</p> : null}
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn btn-primary min-h-11 px-4 text-sm" onClick={() => void onSave()}>
-            {editingId ? "保存本栏目" : "新增并保存本栏目"}
+            {editingId ? "保存这条笔记" : "新增并保存这条笔记"}
           </button>
           {editingId ? (
             <button
@@ -291,7 +342,15 @@ export function PersonAdminEntriesPanel({
             <div className="min-w-0 flex-1">
               <p className="font-medium">{item.title}</p>
               <p className="text-xs text-[var(--muted)]">
-                {item.period || item.org || (item.published ? "已发布" : "未发布")}
+                {[
+                  collections.find((collection) => collection.id === item.collectionId)?.title,
+                  item.period,
+                  item.org,
+                  item.published ? "已发布" : "未发布",
+                  item.allowDownload ? "可下载" : "仅预览",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             </div>
             <button

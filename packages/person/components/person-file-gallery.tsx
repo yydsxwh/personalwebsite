@@ -85,9 +85,11 @@ function FilePreview({ entryId, file }: { entryId: string; file: PersonEntryFile
 export function PersonFileGallery({
   entryId,
   files,
+  allowDownload = false,
 }: {
   entryId: string;
   files: PersonEntryFile[];
+  allowDownload?: boolean;
 }) {
   if (!files.length) return null;
   return (
@@ -111,9 +113,15 @@ export function PersonFileGallery({
                     预览
                   </a>
                 ) : null}
-                <a href={download} className="btn btn-primary min-h-11 px-3 text-sm">
-                  下载
-                </a>
+                {allowDownload ? (
+                  <a href={download} className="btn btn-primary min-h-11 px-3 text-sm">
+                    下载
+                  </a>
+                ) : (
+                  <span className="inline-flex min-h-11 items-center text-xs text-[var(--ps-muted)]">
+                    作者未开放下载
+                  </span>
+                )}
               </div>
             </div>
             {personFileCanInlinePreview(file.kind) ? (
@@ -131,25 +139,37 @@ export function PersonFileGallery({
 export function PersonFileStrip({
   entryId,
   files,
+  allowDownload = false,
 }: {
   entryId: string;
   files: PersonEntryFile[];
+  allowDownload?: boolean;
 }) {
   if (!files.length) return null;
   return (
     <div className="mt-3 flex flex-wrap gap-2">
-      {files.slice(0, 6).map((file) => (
-        <a
-          key={file.id}
-          href={personFileCanInlinePreview(file.kind)
-            ? personFilePreviewPath(entryId, file.id)
-            : personFileDownloadPath(entryId, file.id)}
-          className="person-chip"
-        >
-          <strong>{PERSON_FILE_KIND_LABEL[file.kind]}</strong>
-          {file.name}
-        </a>
-      ))}
+      {files.slice(0, 6).map((file) => {
+        const canPreview = personFileCanInlinePreview(file.kind);
+        const href = canPreview
+          ? personFilePreviewPath(entryId, file.id)
+          : allowDownload
+            ? personFileDownloadPath(entryId, file.id)
+            : "";
+        if (!href) {
+          return (
+            <span key={file.id} className="person-chip">
+              <strong>{PERSON_FILE_KIND_LABEL[file.kind]}</strong>
+              {file.name}
+            </span>
+          );
+        }
+        return (
+          <a key={file.id} href={href} className="person-chip">
+            <strong>{PERSON_FILE_KIND_LABEL[file.kind]}</strong>
+            {file.name}
+          </a>
+        );
+      })}
     </div>
   );
 }

@@ -47,10 +47,12 @@ export function PersonSocialFeed({
   albums,
   posts,
   pagination,
+  pageHref = "/about/person",
 }: {
   albums?: PersonSocialAlbumCard[];
   posts: PersonSocialCard[];
   pagination?: PersonSocialPagination | null;
+  pageHref?: string;
 }) {
   const albumList = albums || [];
   if (
@@ -187,7 +189,7 @@ export function PersonSocialFeed({
         <PaginationBar
           page={paging.page}
           totalPages={paging.totalPages}
-          hrefForPage={(p) => `/about/person?page=${p}#posts`}
+          hrefForPage={(p) => `${pageHref}?page=${p}#posts`}
         />
       ) : null}
     </section>
