@@ -1,0 +1,10 @@
+---
+description: 本仓库是从 Andyyyds 迁出的个人 IP 产品
+alwaysApply: true
+---
+
+# 个人 IP 产品
+
+面向用户的个人展示业务写在 `packages/person`（`@andyyyds/person`）。
+`src/app` 只留路由薄入口。`dynamic` / `runtime` / `maxDuration` / `metadata` 写在入口文件里。
+登录、权限、存储留在 `packages/shared`。不要把个人 IP 业务写回 Andyyyds 主站。

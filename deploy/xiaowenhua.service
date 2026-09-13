@@ -1,0 +1,16 @@
+[Unit]
+Description=xiaowenhua.net personal site
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/xiaowenhua/app
+EnvironmentFile=/var/www/xiaowenhua/app/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start -- --hostname 127.0.0.1 --port 3001
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
