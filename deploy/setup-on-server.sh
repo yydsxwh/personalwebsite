@@ -66,6 +66,7 @@ ln -sfn /etc/nginx/sites-available/xiaowenhua.net /etc/nginx/sites-enabled/xiaow
 nginx -t
 systemctl daemon-reload
 systemctl enable --now xiaowenhua
+systemctl restart xiaowenhua
 systemctl reload nginx
 
 ready=0
