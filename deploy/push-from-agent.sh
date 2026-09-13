@@ -6,7 +6,7 @@ set -euo pipefail
 
 HOST="${DEPLOY_HOST:-47.242.157.181}"
 USER="${DEPLOY_USER:-root}"
-BRANCH="${DEPLOY_BRANCH:-cursor/hk-dual-site-deploy-b133}"
+BRANCH="${DEPLOY_BRANCH:-cursor/hk-dual-redeploy-de0f}"
 KEYFILE="${DEPLOY_KEY_FILE:-$HOME/.ssh/hk-dual-site}"
 REMOTE_URL="https://raw.githubusercontent.com/yydsxwh/personalwebsite/${BRANCH}/deploy/setup-both-sites.sh"
 
@@ -49,14 +49,28 @@ PY
 
 write_key
 
+# PKCS#1 / one-line PEM secrets are valid to ssh-keygen but some ssh
+# clients stall or skip them (identity type -1). Convert in place.
+if ! ssh-keygen -y -f "$KEYFILE" >/dev/null 2>&1; then
+  echo "DEPLOY_SSH_KEY 无法解析成私钥"
+  exit 1
+fi
+if head -n1 "$KEYFILE" | grep -qE 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY'; then
+  ssh-keygen -p -N "" -f "$KEYFILE" >/dev/null
+fi
+
+ssh_opts=(
+  -i "$KEYFILE"
+  -o BatchMode=yes
+  -o IdentitiesOnly=yes
+  -o StrictHostKeyChecking=accept-new
+  -o ConnectTimeout=15
+  -o IPQoS=none
+)
+
 ssh_try() {
   local user="$1"
-  ssh -i "$KEYFILE" \
-    -o BatchMode=yes \
-    -o IdentitiesOnly=yes \
-    -o StrictHostKeyChecking=accept-new \
-    -o ConnectTimeout=15 \
-    "${user}@${HOST}" "echo SSH_OK"
+  ssh "${ssh_opts[@]}" "${user}@${HOST}" "echo SSH_OK"
 }
 
 CONNECTED_USER=""
@@ -78,9 +92,6 @@ if [[ -z "$CONNECTED_USER" ]]; then
 fi
 
 echo "用 ${CONNECTED_USER}@${HOST} 执行双站部署..."
-ssh -i "$KEYFILE" \
-  -o BatchMode=yes \
-  -o IdentitiesOnly=yes \
-  -o StrictHostKeyChecking=accept-new \
+ssh "${ssh_opts[@]}" \
   "${CONNECTED_USER}@${HOST}" \
-  "curl -fsSL ${REMOTE_URL} | sudo bash"
+  "DEPLOY_BRANCH='${BRANCH}' curl -fsSL '${REMOTE_URL}' | sudo -E bash"

@@ -6,12 +6,12 @@
 # 不会改 Andyyyds 主站 /var/www/yyds-course-platform（端口 3000）。
 #
 # 用法（root，阿里云「远程连接」或 SSH）：
-#   curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-site-deploy-b133/deploy/setup-both-sites.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-redeploy-de0f/deploy/setup-both-sites.sh | sudo bash
 
 set -euo pipefail
 
 REPO="${REPO:-https://github.com/yydsxwh/personalwebsite.git}"
-BRANCH="${DEPLOY_BRANCH:-cursor/hk-dual-site-deploy-b133}"
+BRANCH="${DEPLOY_BRANCH:-cursor/hk-dual-redeploy-de0f}"
 EMAIL="${CERTBOT_EMAIL:-yydsxwh@gmail.com}"
 SERVER_IP="${SERVER_IP:-47.242.157.181}"
 WORKDIR="${WORKDIR:-/tmp/personalwebsite-dual-deploy}"
@@ -19,50 +19,20 @@ CLIENT_SITE_ID="${CLIENT_SITE_ID:-zhouyuding0825}"
 CLIENT_DOMAIN="${CLIENT_DOMAIN:-zhouyuding0825.com}"
 CLIENT_PORT="${CLIENT_PORT:-3002}"
 
-# 与 Cursor My Secrets 里 DEPLOY_SSH_KEY 配对的公钥（见 deploy/README.md）。
-AGENT_PUBKEY="${AGENT_PUBKEY:-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOnoSIzmgruj6YEcUuhotrh0mfQ5v79r7dJb13iEK2kp cursor-hk-deploy}"
-
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "请用 root 运行：sudo bash $0"
   exit 1
-fi
-
-install_agent_pubkey() {
-  local key="$AGENT_PUBKEY"
-  [[ -z "$key" ]] && return 0
-  local homes=("/root")
-  [[ -d /home/ubuntu ]] && homes+=("/home/ubuntu")
-  [[ -d /home/admin ]] && homes+=("/home/admin")
-  local home
-  for home in "${homes[@]}"; do
-    local user
-    user="$(stat -c '%U' "$home" 2>/dev/null || echo root)"
-    mkdir -p "$home/.ssh"
-    chmod 700 "$home/.ssh"
-    touch "$home/.ssh/authorized_keys"
-    chmod 600 "$home/.ssh/authorized_keys"
-    if grep -qF "$key" "$home/.ssh/authorized_keys"; then
-      echo "已存在：$home/.ssh/authorized_keys"
-    else
-      echo "$key" >> "$home/.ssh/authorized_keys"
-      echo "已写入部署公钥：$home/.ssh/authorized_keys"
-    fi
-    chown -R "$user:$user" "$home/.ssh" 2>/dev/null || true
-  done
-}
-
-echo "==> 写入 Cloud Agent 部署公钥（不影响现有网站）"
-if [[ -f deploy/add-agent-key.sh ]]; then
-  AGENT_PUBKEY="$AGENT_PUBKEY" bash deploy/add-agent-key.sh
-else
-  install_agent_pubkey
 fi
 
 echo "==> 拉取部署脚本 ${BRANCH}"
 rm -rf "$WORKDIR"
 git clone --depth 1 --branch "$BRANCH" "$REPO" "$WORKDIR"
 cd "$WORKDIR"
-chmod +x deploy/setup-on-server.sh deploy/install-site.sh
+chmod +x deploy/setup-on-server.sh deploy/install-site.sh deploy/add-agent-key.sh
+
+echo "==> 写入 Cloud Agent 部署公钥（不影响现有网站）"
+unset AGENT_PUBKEY
+bash deploy/add-agent-key.sh
 
 echo
 echo "==> [1/2] 更新自己的站 xiaowenhua.net（不重置数据库、不改主站）"

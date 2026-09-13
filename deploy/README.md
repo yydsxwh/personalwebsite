@@ -24,16 +24,16 @@
 
 改密钥后必须**新开一个 Cloud Agent**，正在跑的对话读不到新钥匙。
 
-私钥只放 Secrets，不要提交到任何 git 仓库。公钥可以公开，需要写进服务器：
+私钥只放 Secrets，不要提交到任何 git 仓库。当前 My Secrets 对应的公钥（可公开）：
 
 ```
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOnoSIzmgruj6YEcUuhotrh0mfQ5v79r7dJb13iEK2kp cursor-hk-deploy
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC+gqe3sgSPPJQ4Jmz9lNz3jLxFRhNAOd+F9YG2pIIjoP8pqMg9DWBHoSaNv9WNYOXSScNkIs718hlMqNEtdoDCG84w06Mgs5kcZA0SzgyfcwTCtFRNUBUl7GVTf2JNgdLk6faJBzls5vvjPgAUaY6Tnm2J3loA9TtT2I72fSyOrRsaynswOpFWQpQNNEsXWNjz/THKegpq3DEZRlUdYV/0513vWB6i+rW/LEzMD2Ky1CrAMGtc4aTHAqBBUtNQT3LITsRyjXRRAPIFtzk65+cPxUKe4fDDEU//DqmKIMHA3bW0t+rwH2bgkfrAHF7HRRXp+hf4xEoneW1uR+fKku4/ cursor-hk-dual-site
 ```
 
-阿里云「远程连接」以 root 执行一次（只加钥匙，不动网站）：
+阿里云「远程连接」以 root 执行一次（只加钥匙，不动网站；脚本会同时写入上面这把 RSA 和文档里的 ed25519）：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-site-deploy-b133/deploy/add-agent-key.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-redeploy-de0f/deploy/add-agent-key.sh | sudo bash
 ```
 
 你自己另造了一把时，把 `.pub` 整行赋给 `AGENT_PUBKEY` 再跑同一条命令。
@@ -67,7 +67,7 @@ bash deploy/push-from-agent.sh
 ## 两个个人站一键更新
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-site-deploy-b133/deploy/setup-both-sites.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-dual-redeploy-de0f/deploy/setup-both-sites.sh | sudo bash
 ```
 
 - 已有 `prod.db` 不重置
@@ -89,8 +89,8 @@ curl -fsSL https://raw.githubusercontent.com/yydsxwh/personalwebsite/cursor/hk-d
 
 ```bash
 cd /var/www/xiaowenhua/app
-sudo git fetch origin && sudo git checkout cursor/hk-dual-site-deploy-b133
-sudo git pull --ff-only origin cursor/hk-dual-site-deploy-b133
+sudo git fetch origin && sudo git checkout cursor/hk-dual-redeploy-de0f
+sudo git pull --ff-only origin cursor/hk-dual-redeploy-de0f
 sudo npm install && sudo npx prisma db push && sudo npm run build
 sudo systemctl restart xiaowenhua
 ```
