@@ -13,5 +13,13 @@ export default async function PersonAdminLayout({
   if (!session) redirect("/login?next=/person-admin");
   if (!isAdmin(session)) redirect("/studio");
   const profile = await getPersonProfile();
-  return <PersonAdminShell labels={profile.sectionLabels}>{children}</PersonAdminShell>;
+  return (
+    <PersonAdminShell
+      adminColumnOrder={profile.adminColumnOrder}
+      labels={profile.sectionLabels}
+      navOrder={profile.navOrder}
+    >
+      {children}
+    </PersonAdminShell>
+  );
 }

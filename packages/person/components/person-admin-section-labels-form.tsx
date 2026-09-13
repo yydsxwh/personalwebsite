@@ -9,6 +9,7 @@ import {
   PERSON_ENTRY_KINDS,
   PERSON_HOME_TITLE_KEYS,
   PERSON_LABEL_MAX,
+  adminColumnsFromNavOrder,
   normalizeNavOrder,
   type PersonAdminNavKey,
   type PersonHomeTitleKey,
@@ -189,13 +190,17 @@ export function PersonAdminSectionLabelsForm() {
     setSavingKey("navOrder");
     setStatus("保存顺序中…");
     try {
-      const saved = await savePersonAdminProfile({ navOrder: ordered });
+      const saved = await savePersonAdminProfile({
+        navOrder: ordered,
+        adminColumnOrder: adminColumnsFromNavOrder(ordered, profile.adminColumnOrder),
+      });
       setProfile((current) => ({
         ...saved,
         navOrder: navOrderRef.current,
         sectionLabels: current.sectionLabels,
       }));
-      setStatus("前台导航和首页栏目顺序已保存");
+      router.refresh();
+      setStatus("前台导航、首页和后台左侧栏目顺序已保存");
     } catch (err) {
       setStatus("");
       setError(err instanceof Error ? err.message : "保存顺序失败");
@@ -284,46 +289,14 @@ export function PersonAdminSectionLabelsForm() {
       <div>
         <h2 className="text-lg font-semibold">{labels.admin.sections}</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          每个名称都可以单独改、单独保存。空着则回退默认名。前台顶栏可以拖动改顺序，首页栏目会跟着变。
+          每个名称都可以单独改、单独保存。空着则回退默认名。后台左侧内容栏目可以直接拖动；这里改前台顶栏顺序时，左侧菜单也会跟着变。
         </p>
       </div>
 
       <section className="grid gap-3">
-        <h3 className="text-sm font-semibold">后台侧栏</h3>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {PERSON_ADMIN_NAV_KEYS.map((key) => (
-            <LabelField
-              key={key}
-              label={DEFAULT_SECTION_LABELS.admin[key]}
-              hint={ADMIN_HINT[key]}
-              value={labels.admin[key]}
-              saving={savingKey === `admin.${key}`}
-              onChange={(value) =>
-                setLabels({ ...labels, admin: { ...labels.admin, [key]: value } })
-              }
-              onSave={() => void saveAdmin(key)}
-            />
-          ))}
-          {PERSON_ENTRY_KINDS.map((kind) => (
-            <LabelField
-              key={kind}
-              label={DEFAULT_SECTION_LABELS.kinds[kind]}
-              hint="后台栏目"
-              value={labels.kinds[kind]}
-              saving={savingKey === `kinds.${kind}`}
-              onChange={(value) =>
-                setLabels({ ...labels, kinds: { ...labels.kinds, [kind]: value } })
-              }
-              onSave={() => void saveKind(kind)}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-3">
         <h3 className="text-sm font-semibold">前台导航顺序</h3>
         <p className="text-sm text-[var(--muted)]">
-          按住左边拖动，或用上移 / 下移。这里的顺序同时作用于前台顶栏和首页栏目。想把自媒体靠前，抓住「自媒体」往上拖即可。「管理」始终在最后，不能拖。
+          按住左边拖动，或用上移 / 下移。左侧菜单拖动也会改这里。想把自媒体靠前，抓住「自媒体」往上拖即可。「管理」始终在最后，不能拖。
         </p>
         <div className={`person-nav-order${dragIndex != null ? " is-sorting" : ""}`} ref={listRef}>
           {navOrder.map((key, index) => (
@@ -382,6 +355,38 @@ export function PersonAdminSectionLabelsForm() {
         {savingKey === "navOrder" || status.includes("顺序") ? (
           <p className="text-sm text-[var(--brand-strong)]">{status || "保存顺序中…"}</p>
         ) : null}
+      </section>
+
+      <section className="grid gap-3">
+        <h3 className="text-sm font-semibold">后台侧栏名称</h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {PERSON_ADMIN_NAV_KEYS.map((key) => (
+            <LabelField
+              key={key}
+              label={DEFAULT_SECTION_LABELS.admin[key]}
+              hint={ADMIN_HINT[key]}
+              value={labels.admin[key]}
+              saving={savingKey === `admin.${key}`}
+              onChange={(value) =>
+                setLabels({ ...labels, admin: { ...labels.admin, [key]: value } })
+              }
+              onSave={() => void saveAdmin(key)}
+            />
+          ))}
+          {PERSON_ENTRY_KINDS.map((kind) => (
+            <LabelField
+              key={kind}
+              label={DEFAULT_SECTION_LABELS.kinds[kind]}
+              hint="后台栏目"
+              value={labels.kinds[kind]}
+              saving={savingKey === `kinds.${kind}`}
+              onChange={(value) =>
+                setLabels({ ...labels, kinds: { ...labels.kinds, [kind]: value } })
+              }
+              onSave={() => void saveKind(kind)}
+            />
+          ))}
+        </div>
       </section>
 
       <section className="grid gap-3">

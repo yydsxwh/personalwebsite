@@ -65,6 +65,39 @@ export const PERSON_PUBLIC_NAV_KEYS = [
 
 export type PersonPublicNavKey = (typeof PERSON_PUBLIC_NAV_KEYS)[number];
 
+/** 后台左侧可拖动的内容栏目。总览 / 档案 / 栏目名称固定在最上面。 */
+export const PERSON_ADMIN_COLUMN_KEYS = [...PERSON_ENTRY_KINDS, "SOCIAL"] as const;
+export type PersonAdminColumnKey = (typeof PERSON_ADMIN_COLUMN_KEYS)[number];
+
+export const PERSON_ADMIN_COLUMN_TO_NAV: Record<PersonAdminColumnKey, PersonPublicNavKey> = {
+  RESUME: "resume",
+  INTRO_VIDEO: "intro",
+  PROJECT: "projects",
+  BLOG: "blog",
+  PORTFOLIO: "portfolio",
+  HONOR: "honors",
+  GRADE: "honors",
+  PRACTICE: "life",
+  ACTIVITY: "life",
+  INTEREST: "life",
+  PHOTO: "photos",
+  SOCIAL: "social",
+};
+
+export const PERSON_NAV_TO_ADMIN_COLUMNS: Partial<
+  Record<PersonPublicNavKey, readonly PersonAdminColumnKey[]>
+> = {
+  resume: ["RESUME"],
+  intro: ["INTRO_VIDEO"],
+  projects: ["PROJECT"],
+  blog: ["BLOG"],
+  portfolio: ["PORTFOLIO"],
+  honors: ["HONOR", "GRADE"],
+  life: ["PRACTICE", "ACTIVITY", "INTEREST"],
+  photos: ["PHOTO"],
+  social: ["SOCIAL"],
+};
+
 export const PERSON_HOME_TITLE_KEYS = [
   "aboutMe",
   "featured",
@@ -153,6 +186,8 @@ export type PersonProfilePayload = {
   sectionLabels: PersonSectionLabels;
   /** 前台顶栏和首页栏目共用这一套顺序。「管理」不在里面。 */
   navOrder: PersonPublicNavKey[];
+  /** 后台左侧内容栏目顺序，拖动后同步到前台 navOrder。 */
+  adminColumnOrder: PersonAdminColumnKey[];
   /** false 时前台不显示 GitHub，后台仍可改账号。 */
   showGithub: boolean;
 };
@@ -212,6 +247,7 @@ export const DEFAULT_PERSON_PROFILE: PersonProfilePayload = {
   extraContacts: [],
   sectionLabels: DEFAULT_SECTION_LABELS,
   navOrder: [...PERSON_PUBLIC_NAV_KEYS],
+  adminColumnOrder: [...PERSON_ADMIN_COLUMN_KEYS],
   showGithub: true,
 };
 
@@ -221,6 +257,10 @@ export function isPersonEntryKind(value: string): value is PersonEntryKind {
 
 export function isPersonPublicNavKey(value: string): value is PersonPublicNavKey {
   return (PERSON_PUBLIC_NAV_KEYS as readonly string[]).includes(value);
+}
+
+export function isPersonAdminColumnKey(value: string): value is PersonAdminColumnKey {
+  return (PERSON_ADMIN_COLUMN_KEYS as readonly string[]).includes(value);
 }
 
 /** 非法项丢掉，缺的栏目按默认顺序补在后面，保证十个导航都在。 */
@@ -247,6 +287,75 @@ export function normalizeNavOrder(raw: unknown): PersonPublicNavKey[] {
     if (!seen.has(key)) next.push(key);
   }
   return next;
+}
+
+export function normalizeAdminColumnOrder(raw: unknown): PersonAdminColumnKey[] {
+  let list: unknown[] = [];
+  if (typeof raw === "string") {
+    try {
+      list = JSON.parse(raw || "[]") as unknown[];
+    } catch {
+      list = [];
+    }
+  } else if (Array.isArray(raw)) {
+    list = raw;
+  }
+  const seen = new Set<PersonAdminColumnKey>();
+  const next: PersonAdminColumnKey[] = [];
+  for (const item of list) {
+    const key = String(item);
+    if (!isPersonAdminColumnKey(key) || seen.has(key)) continue;
+    seen.add(key);
+    next.push(key);
+  }
+  for (const key of PERSON_ADMIN_COLUMN_KEYS) {
+    if (!seen.has(key)) next.push(key);
+  }
+  return next;
+}
+
+export function navOrderFromAdminColumns(
+  columns: readonly string[],
+  currentNav: readonly string[] = PERSON_PUBLIC_NAV_KEYS,
+): PersonPublicNavKey[] {
+  const current = normalizeNavOrder(currentNav);
+  const mapped: PersonPublicNavKey[] = [];
+  const seen = new Set<PersonPublicNavKey>();
+  for (const column of normalizeAdminColumnOrder(columns)) {
+    const nav = PERSON_ADMIN_COLUMN_TO_NAV[column];
+    if (seen.has(nav)) continue;
+    seen.add(nav);
+    mapped.push(nav);
+  }
+  const aboutIndex = Math.max(0, current.indexOf("about"));
+  const next = [...mapped];
+  next.splice(aboutIndex, 0, "about");
+  return normalizeNavOrder(next);
+}
+
+export function adminColumnsFromNavOrder(
+  navOrder: readonly string[],
+  currentColumns?: readonly string[],
+): PersonAdminColumnKey[] {
+  const current = normalizeAdminColumnOrder(currentColumns);
+  const grouped = new Map<PersonPublicNavKey, PersonAdminColumnKey[]>();
+  for (const column of current) {
+    const nav = PERSON_ADMIN_COLUMN_TO_NAV[column];
+    const list = grouped.get(nav) || [];
+    list.push(column);
+    grouped.set(nav, list);
+  }
+  const next: PersonAdminColumnKey[] = [];
+  for (const key of normalizeNavOrder(navOrder)) {
+    if (key === "about") continue;
+    const existing = grouped.get(key);
+    if (existing?.length) {
+      next.push(...existing);
+      continue;
+    }
+    next.push(...(PERSON_NAV_TO_ADMIN_COLUMNS[key] || []));
+  }
+  return normalizeAdminColumnOrder(next);
 }
 
 function clip(raw: unknown, max: number): string {
@@ -412,6 +521,21 @@ function navOrderFromLabelsBlob(raw: unknown): unknown {
   return undefined;
 }
 
+function adminColumnOrderFromLabelsBlob(raw: unknown): unknown {
+  let value = raw;
+  if (typeof raw === "string") {
+    try {
+      value = JSON.parse(raw || "{}");
+    } catch {
+      return undefined;
+    }
+  }
+  if (value && typeof value === "object" && "adminColumnOrder" in value) {
+    return (value as { adminColumnOrder?: unknown }).adminColumnOrder;
+  }
+  return undefined;
+}
+
 function showGithubFromLabelsBlob(raw: unknown): boolean | undefined {
   let value = raw;
   if (typeof raw === "string") {
@@ -431,8 +555,13 @@ export function normalizePersonProfile(raw: unknown): PersonProfilePayload {
   const input = raw && typeof raw === "object" ? (raw as Partial<PersonProfilePayload>) : {};
   const navOrderRaw =
     input.navOrder != null ? input.navOrder : navOrderFromLabelsBlob(input.sectionLabels);
+  const adminColumnRaw =
+    input.adminColumnOrder != null
+      ? input.adminColumnOrder
+      : adminColumnOrderFromLabelsBlob(input.sectionLabels);
   const showGithubRaw =
     input.showGithub != null ? input.showGithub : showGithubFromLabelsBlob(input.sectionLabels);
+  const navOrder = normalizeNavOrder(navOrderRaw);
   return {
     displayName: clip(input.displayName, PERSON_NAME_MAX),
     headline: clip(input.headline, PERSON_HEADLINE_MAX),
@@ -451,7 +580,11 @@ export function normalizePersonProfile(raw: unknown): PersonProfilePayload {
     weibo: clipUrl(input.weibo),
     extraContacts: normalizeExtraContacts(input.extraContacts),
     sectionLabels: normalizeSectionLabels(input.sectionLabels),
-    navOrder: normalizeNavOrder(navOrderRaw),
+    navOrder,
+    adminColumnOrder:
+      adminColumnRaw != null
+        ? normalizeAdminColumnOrder(adminColumnRaw)
+        : adminColumnsFromNavOrder(navOrder),
     showGithub: showGithubRaw !== false,
   };
 }
@@ -629,18 +762,63 @@ export function normalizePersonCollection(
   };
 }
 
-export function personAdminNavLinks(labels: PersonSectionLabels) {
+export function personAdminColumnHref(key: PersonAdminColumnKey) {
+  if (key === "SOCIAL") return "/person-admin/social";
+  return `/person-admin/entries/${key.toLowerCase()}`;
+}
+
+export function personAdminColumnLabel(
+  labels: PersonSectionLabels,
+  key: PersonAdminColumnKey,
+) {
+  if (key === "SOCIAL") return labels.admin.social;
+  return labels.kinds[key];
+}
+
+export function personAdminPinnedLinks(labels: PersonSectionLabels) {
   return [
-    { href: "/person-admin", label: labels.admin.overview, exact: true as const },
-    { href: "/person-admin/profile", label: labels.admin.profile, exact: false as const },
-    { href: "/person-admin/sections", label: labels.admin.sections, exact: false as const },
-    ...PERSON_ENTRY_KINDS.map((kind) => ({
-      href: `/person-admin/entries/${kind.toLowerCase()}`,
-      label: labels.kinds[kind],
+    {
+      href: "/person-admin",
+      label: labels.admin.overview,
+      exact: true as const,
+      pinned: true as const,
+      columnKey: undefined as PersonAdminColumnKey | undefined,
+    },
+    {
+      href: "/person-admin/profile",
+      label: labels.admin.profile,
       exact: false as const,
-    })),
-    { href: "/person-admin/social", label: labels.admin.social, exact: false as const },
+      pinned: true as const,
+      columnKey: undefined as PersonAdminColumnKey | undefined,
+    },
+    {
+      href: "/person-admin/sections",
+      label: labels.admin.sections,
+      exact: false as const,
+      pinned: true as const,
+      columnKey: undefined as PersonAdminColumnKey | undefined,
+    },
   ];
+}
+
+export function personAdminColumnLinks(
+  labels: PersonSectionLabels,
+  columnOrder?: readonly string[],
+) {
+  return normalizeAdminColumnOrder(columnOrder).map((key) => ({
+    href: personAdminColumnHref(key),
+    label: personAdminColumnLabel(labels, key),
+    exact: false as const,
+    pinned: false as const,
+    columnKey: key,
+  }));
+}
+
+export function personAdminNavLinks(
+  labels: PersonSectionLabels,
+  columnOrder?: readonly string[],
+) {
+  return [...personAdminPinnedLinks(labels), ...personAdminColumnLinks(labels, columnOrder)];
 }
 
 export const PERSON_NAV_PAGE_HREF: Record<PersonPublicNavKey, string> = {

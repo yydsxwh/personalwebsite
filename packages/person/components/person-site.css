@@ -346,6 +346,75 @@
   color: #102033;
 }
 
+.person-admin-nav-hint {
+  margin: 0.55rem 0 0.2rem;
+  padding: 0 0.35rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--muted, #667085);
+}
+
+.person-admin-columns {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.person-admin-columns.is-sorting,
+.person-admin-columns.is-sorting * {
+  user-select: none !important;
+}
+
+.person-admin-column-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: stretch;
+  border-radius: 0.8rem;
+}
+
+.person-admin-column-row.is-over {
+  box-shadow: 0 0 0 2px rgba(154, 123, 60, 0.28);
+}
+
+.person-admin-column-row.is-dragging {
+  opacity: 0.5;
+}
+
+.person-admin-column-handle {
+  display: grid;
+  place-items: center;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #102033;
+  cursor: grab;
+  font-size: 0.85rem;
+  letter-spacing: -0.14em;
+  touch-action: none;
+  user-select: none;
+  opacity: 0.55;
+}
+
+.person-admin-column-handle:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+
+.person-admin-column-handle:active {
+  cursor: grabbing;
+}
+
+.person-admin-nav-status,
+.person-admin-nav-error {
+  margin: 0.35rem 0.2rem 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.person-admin-nav-error {
+  color: var(--fire-strong, #b42318);
+}
+
 .person-nav-order {
   display: grid;
   gap: 0.65rem;

@@ -5,12 +5,16 @@ import {
   mergeSectionLabels,
   buildPersonContactChips,
   normalizeExtraContacts,
+  adminColumnsFromNavOrder,
+  navOrderFromAdminColumns,
+  normalizeAdminColumnOrder,
   normalizeNavOrder,
   normalizePersonCollection,
   normalizePersonEntry,
   normalizePersonProfile,
   normalizeSectionLabels,
   normalizeTagList,
+  PERSON_ADMIN_COLUMN_KEYS,
   PERSON_HOME_NAV_SECTIONS,
   PERSON_NAV_PAGE_HREF,
   PERSON_PUBLIC_NAV_KEYS,
@@ -195,6 +199,43 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   assert.equal(fromJson.navOrder[1], "about");
   assert.ok(fromJson.navOrder.includes("photos"));
   assert.ok(fromJson.navOrder.includes("social"));
+}
+
+{
+  assert.deepEqual(DEFAULT_PERSON_PROFILE.adminColumnOrder, [...PERSON_ADMIN_COLUMN_KEYS]);
+  const columns = normalizeAdminColumnOrder(["SOCIAL", "PHOTO", "bogus", "SOCIAL"]);
+  assert.equal(columns[0], "SOCIAL");
+  assert.equal(columns[1], "PHOTO");
+  assert.ok(!columns.includes("bogus" as never));
+  assert.ok(columns.includes("RESUME"));
+  const nav = navOrderFromAdminColumns(["SOCIAL", "RESUME"], ["about", "resume", "social"]);
+  assert.equal(nav[0], "about");
+  assert.equal(nav[1], "social");
+  assert.equal(nav[2], "resume");
+  const back = adminColumnsFromNavOrder(["social", "about", "photos"], ["PHOTO", "SOCIAL"]);
+  assert.equal(back[0], "SOCIAL");
+  assert.equal(back[1], "PHOTO");
+  const grouped = adminColumnsFromNavOrder(["honors", "life"], ["ACTIVITY", "HONOR", "GRADE", "PRACTICE"]);
+  assert.deepEqual(grouped.slice(0, 5), ["HONOR", "GRADE", "ACTIVITY", "PRACTICE", "INTEREST"]);
+  const fromBlob = normalizePersonProfile({
+    sectionLabels: JSON.stringify({
+      adminColumnOrder: ["SOCIAL", "BLOG"],
+      navOrder: ["social", "blog", "about"],
+    }),
+  });
+  assert.equal(fromBlob.adminColumnOrder[0], "SOCIAL");
+  assert.equal(fromBlob.adminColumnOrder[1], "BLOG");
+  assert.equal(fromBlob.navOrder[0], "social");
+  const derived = normalizePersonProfile({
+    sectionLabels: JSON.stringify({ navOrder: ["photos", "about", "social"] }),
+  });
+  assert.equal(derived.adminColumnOrder[0], "PHOTO");
+  assert.equal(derived.adminColumnOrder[1], "SOCIAL");
+  const links = personAdminNavLinks(DEFAULT_SECTION_LABELS, ["SOCIAL", "RESUME"]);
+  assert.equal(links[0]?.href, "/person-admin");
+  assert.equal(links[3]?.columnKey, "SOCIAL");
+  assert.equal(links[3]?.href, "/person-admin/social");
+  assert.equal(links[4]?.columnKey, "RESUME");
 }
 
 {
