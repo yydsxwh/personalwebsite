@@ -210,17 +210,23 @@ import { classifyPersonFile, normalizePersonFiles } from "./person-files";
   assert.equal(note.allowDownload, true);
   assert.equal(note.collectionId, "food-set");
   assert.deepEqual(normalizeTagList("教培，运营 #金融"), ["教培", "运营", "金融"]);
-  const collection = normalizePersonCollection({
+  const collectionDraft = normalizePersonCollection({
     kind: "RESUME",
     title: "教培类工作简历",
   });
-  assert.equal(collection.kind, "RESUME");
-  assert.equal(collection.title, "教培类工作简历");
+  assert.equal(collectionDraft.kind, "RESUME");
+  assert.equal(collectionDraft.title, "教培类工作简历");
   assert.equal(personCollectionHref("abc"), "/about/person/c/abc");
   const contentNavs = PERSON_PUBLIC_NAV_KEYS.filter((key) => key !== "about" && key !== "social");
   for (const key of contentNavs) {
     assert.ok((PERSON_NAV_COLLECTION_KINDS[key] || []).length > 0, `${key} 必须能建合集`);
   }
+  const collection = {
+    ...collectionDraft,
+    id: "c1",
+    updatedAt: "2026-09-13T00:00:00.000Z",
+    entryCount: 0,
+  };
   const grouped = personCollectionsForNav("honors", {
     HONOR: [collection],
     GRADE: [{ ...collection, id: "g1", kind: "GRADE", title: "成绩单" }],
