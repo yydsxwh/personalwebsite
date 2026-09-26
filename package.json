@@ -1,0 +1,49 @@
+{
+  "name": "personalwebsite",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Andyyyds 个人 IP 独立站：从 yydsxwh/Andyyyds 的 @andyyyds/person 完整迁出，便于后续独立成产品。",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build --webpack",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "tsx packages/person/lib/person-site.test.ts",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@alicloud/pop-core": "^1.8.0",
+    "@andyyyds/person": "*",
+    "@andyyyds/shared": "*",
+    "@prisma/client": "^5.22.0",
+    "@tailwindcss/postcss": "^4",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.8",
+    "next": "16.3.0",
+    "opencc-js": "^1.4.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "tailwindcss": "^4",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.23.8",
+    "typescript": "^5"
+  }
+}
