@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # 从 Cloud Agent / 本机用 DEPLOY_SSH_KEY 登录香港机，执行双站部署。
-# 需要环境变量：DEPLOY_HOST（默认 47.242.157.181）、DEPLOY_USER（默认 root）、DEPLOY_SSH_KEY
+# 需要环境变量：DEPLOY_HOST、DEPLOY_USER（默认 ecs-user）、DEPLOY_SSH_KEY
 
 set -euo pipefail
 
-HOST="${DEPLOY_HOST:-47.242.157.181}"
-USER="${DEPLOY_USER:-root}"
+HOST="${DEPLOY_HOST:-}"
+USER="${DEPLOY_USER:-ecs-user}"
+if [[ -z "$HOST" ]]; then
+  echo "缺少 DEPLOY_HOST" >&2
+  exit 1
+fi
 BRANCH="${DEPLOY_BRANCH:-cursor/hk-dual-redeploy-de0f}"
 KEYFILE="${DEPLOY_KEY_FILE:-$HOME/.ssh/hk-dual-site}"
 REMOTE_URL="https://raw.githubusercontent.com/yydsxwh/personalwebsite/${BRANCH}/deploy/setup-both-sites.sh"

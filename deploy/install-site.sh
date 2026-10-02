@@ -14,7 +14,7 @@ PORT="${PORT:-}"
 REPO="${REPO:-https://github.com/yydsxwh/personalwebsite.git}"
 BRANCH="${DEPLOY_BRANCH:-cursor/hk-dual-redeploy-de0f}"
 EMAIL="${CERTBOT_EMAIL:-yydsxwh@gmail.com}"
-SERVER_IP="${SERVER_IP:-47.242.157.181}"
+SERVER_IP="${SERVER_IP:-${DEPLOY_HOST:-}}"
 
 if [[ "$(id -u)" -ne 0 ]]; then
   echo "请用 root 运行：sudo -E bash $0"
@@ -151,7 +151,7 @@ if [[ "$ready" -ne 1 ]]; then
 fi
 
 DNS_OK=0
-if host "$DOMAIN" 2>/dev/null | grep -q "$SERVER_IP"; then
+if [[ -n "$SERVER_IP" ]] && host "$DOMAIN" 2>/dev/null | grep -q "$SERVER_IP"; then
   DNS_OK=1
 fi
 
