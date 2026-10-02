@@ -82,15 +82,16 @@ if [[ "$ready" -ne 1 ]]; then
   echo "警告：本机 3001 尚未响应，用 journalctl -u xiaowenhua -n 50 查看日志。"
 fi
 
-if host "$DOMAIN" | grep -q "47.242.157.181"; then
+SERVER_IP="${SERVER_IP:-${DEPLOY_HOST:-}}"
+if [[ -n "$SERVER_IP" ]] && host "$DOMAIN" | grep -q "$SERVER_IP"; then
   certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --non-interactive --agree-tos -m "$EMAIL" --redirect || \
-    echo "证书申请失败：确认 DNS 已指向 47.242.157.181 后再运行 certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}"
+    echo "证书申请失败：确认 DNS 已指向 ${SERVER_IP} 后再运行 certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}"
 else
-  echo "DNS 还没指到本机，先跳过 HTTPS。解析生效后执行："
+  echo "DNS 还没确认指向本机，先跳过 HTTPS。设置 SERVER_IP 或 DEPLOY_HOST 后执行："
   echo "  certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos -m ${EMAIL} --redirect"
 fi
 
 echo
-echo "完成。HTTP 预览：http://${DOMAIN} 或 http://47.242.157.181:80 （需安全组放行 80）"
+echo "完成。HTTP 预览：http://${DOMAIN} （需安全组放行 80）"
 echo "后台：/login   默认 admin@yyds.local / 123456 （上线后立刻改密码）"
 echo "进程：systemctl status xiaowenhua"

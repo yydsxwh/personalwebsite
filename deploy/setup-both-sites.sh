@@ -13,7 +13,7 @@ set -euo pipefail
 REPO="${REPO:-https://github.com/yydsxwh/personalwebsite.git}"
 BRANCH="${DEPLOY_BRANCH:-cursor/hk-dual-redeploy-de0f}"
 EMAIL="${CERTBOT_EMAIL:-yydsxwh@gmail.com}"
-SERVER_IP="${SERVER_IP:-47.242.157.181}"
+SERVER_IP="${SERVER_IP:-${DEPLOY_HOST:-}}"
 WORKDIR="${WORKDIR:-/tmp/personalwebsite-dual-deploy}"
 CLIENT_SITE_ID="${CLIENT_SITE_ID:-zhouyuding0825}"
 CLIENT_DOMAIN="${CLIENT_DOMAIN:-zhouyuding0825.com}"
