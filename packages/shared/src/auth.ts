@@ -69,24 +69,37 @@ export async function createSession(
     .sign(getSecret());
 
   const jar = await cookies();
-  jar.set(COOKIE_NAME, token, {
+  const options = {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
-  });
+  };
+  const { linkWwwLogin, multiAccountTabsEnabled } = await import("./www-tab-broker");
+  if (!multiAccountTabsEnabled()) {
+    jar.set(COOKIE_NAME, token, options);
+    return;
+  }
+  const linked = await linkWwwLogin(token, user.id);
+  if (linked.mode === "parallel") {
+    jar.set(COOKIE_NAME, "", { ...options, maxAge: 0 });
+    return;
+  }
+  jar.set(COOKIE_NAME, token, options);
 }
 
 export async function destroySession() {
+  const { multiAccountTabsEnabled, readWwwTabHit, revokeWwwHold } = await import("./www-tab-broker");
+  if (multiAccountTabsEnabled()) {
+    const hit = await readWwwTabHit();
+    if (hit.kind === "ready") await revokeWwwHold(hit.userId);
+  }
   const jar = await cookies();
   jar.delete(COOKIE_NAME);
 }
 
-export async function getSession(): Promise<SessionUser | null> {
-  const jar = await cookies();
-  const token = jar.get(COOKIE_NAME)?.value;
-  if (!token) return null;
+async function sessionFromToken(token: string): Promise<SessionUser | null> {
 
   try {
     const { payload } = await jwtVerify(token, getSecret());
@@ -148,6 +161,25 @@ export async function getSession(): Promise<SessionUser | null> {
   } catch {
     return null;
   }
+}
+
+export async function getSession(): Promise<SessionUser | null> {
+  const { multiAccountTabsEnabled, readWwwTabHit } = await import("./www-tab-broker");
+  if (multiAccountTabsEnabled()) {
+    const hit = await readWwwTabHit();
+    if (hit.kind === "anonymous" || hit.kind === "ambiguous") return null;
+    if (hit.kind === "ready") {
+      const session = await sessionFromToken(hit.token);
+      if (!session) return null;
+      const allowed = new Set(hit.permissionRoles);
+      const roles = session.roles.filter((role) => allowed.has(role));
+      return { ...session, roles, role: roles[0] || "STUDENT" };
+    }
+  }
+  const jar = await cookies();
+  const token = jar.get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  return sessionFromToken(token);
 }
 
 export async function requireUser() {
