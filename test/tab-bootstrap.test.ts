@@ -50,3 +50,11 @@ test("two active accounts never silently select an account without a tab binding
   if (hit.kind === "ready") assert.equal(hit.account.userId, "a");
 });
 
+
+test("cross-origin URL objects are forwarded without a tab header", async () => {
+  const { window, requests } = browser();
+  const input = new URL("https://other.example/api");
+  await window.fetch(input);
+  assert.equal(requests[0].input, input);
+  assert.equal(requests[0].init, undefined);
+});

@@ -497,7 +497,7 @@ window.addEventListener("pagehide",function(event){
 });
 function sameOrigin(input){
   try{
-    var raw=typeof input==="string"?input:(input&&input.url)||"";
+    var raw=typeof input==="string"?input:(input&&input.url)||String(input);
     return new URL(raw,location.href).origin===location.origin;
   }catch(e){return false;}
 }
