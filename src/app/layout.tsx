@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import Link from "next/link";
 import { getPersonProfile } from "@andyyyds/person/lib/person-site-store";
 import { getSession } from "@andyyyds/shared/auth";
@@ -32,6 +33,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="zh-Hans" className="h-full">
       <body className="min-h-full flex flex-col antialiased">
+        <Script src="/api/tab-bootstrap" strategy="beforeInteractive" />
         <header className="glass-bar border-b">
           <div className="container flex min-h-14 items-center justify-between gap-4">
             <Link href="/about/person" className="font-semibold tracking-wide">

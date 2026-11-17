@@ -84,6 +84,8 @@ model User {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
+  wwwDeviceAccounts    WwwDeviceAccount[]
+
   @@index([forumUniversityId])
   @@index([roleApplicationStatus])
   @@index([phone])
@@ -1260,4 +1262,40 @@ model MathcodeGrant {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model WwwBrowserDevice {
+  id           String    @id @default(cuid())
+  tokenHash    String    @unique
+  explicitPick Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  revokedAt    DateTime?
+  accounts     WwwDeviceAccount[]
+  tabs         WwwTabContext[]
+}
+
+model WwwDeviceAccount {
+  id        String    @id @default(cuid())
+  deviceId  String
+  userId    String
+  holdId    String    @unique
+  tokenHash String
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+  device    WwwBrowserDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, userId])
+}
+
+model WwwTabContext {
+  id         String    @id
+  deviceId   String
+  holdId     String    @default("")
+  activeRole String    @default("")
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+  device     WwwBrowserDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
 }
